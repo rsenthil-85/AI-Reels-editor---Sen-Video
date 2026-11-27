@@ -1,4 +1,4 @@
-"""live.py - the live edit page: watch the edit happen in a browser (Claude's browser pane or any browser).
+"""live.py - the edit page: choose the style, watch the edit happen, open it in FilmCraft for touch-ups in a browser (Claude's browser pane or any browser).
 
     python live.py <video or its _edit folder> [--port 8765]        then open http://127.0.0.1:8765
 
@@ -8,12 +8,16 @@ thumbnails (one frame pulled from each rendered graphic) and render progress (ff
 Only files in the edit folder, the graphics cache, the skill's assets/templates, the source video and the finished
 video are served.
 """
-import json, os, re, subprocess, sys, threading
+import json, os, re, secrets, subprocess, sys, threading, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import livelog as LL
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs, unquote
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 CACHE = os.path.join(os.path.expanduser("~"), ".pro-video-editor", "cache")
+PAGE_TOKEN = secrets.token_hex(16)   # the page sends it back on POST; other sites cannot read it
+FC_PROC = None
 TYPES = {".html": "text/html; charset=utf-8", ".json": "application/json", ".mp4": "video/mp4", ".png": "image/png",
          ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".ttf": "font/ttf", ".js": "text/javascript"}
 
@@ -93,11 +97,55 @@ class H(BaseHTTPRequestHandler):
         frac = sum(1.0 if done else (min(1, t / seg) if seg else 0) for t, done in vids.values()) / n if vids else 0
         return {"video": round(frac, 3), "parts": {k: {"t": round(t, 1), "done": d} for k, (t, d) in parts.items()}}
 
+    def do_POST(self):
+        """The page's two actions. Only from the page itself: it carries a per-launch token that other web pages can't read."""
+        path = urlparse(self.path).path
+        if self.headers.get("X-Page-Token") != PAGE_TOKEN: return self.send_error(403)
+        try: body = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length") or 0), 20000)) or b"{}")
+        except Exception: return self.send_error(400)
+        if path == "/api/choose":   # style / length / extras / finish - Claude (watching choice.json) takes it from here
+            styles = json.load(open(os.path.join(ROOT, "styles", "edit_styles.json"), encoding="utf-8"))
+            ch = {"style": body.get("style") if body.get("style") in styles or body.get("style") == "describe" else "mixed",
+                  "describe": str(body.get("describe", ""))[:600],
+                  "length": body.get("length") if body.get("length") in ("full", "60", "30") else "full",
+                  "extras": [x for x in body.get("extras", []) if x in ("music", "zooms", "stickers", "checklist", "motion_bg", "bg_replace")],
+                  "finish": "filmcraft" if body.get("finish") == "filmcraft" else "auto", "t": time.time()}
+            json.dump(ch, open(os.path.join(ED, "choice.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+            lbl = "your own description" if ch["style"] == "describe" else styles[ch["style"]]["label"]
+            LL.step(ED, "style", "doing", f"{lbl} - planning the graphics" + (", then FilmCraft" if ch["finish"] == "filmcraft" else ""))
+            LL.note(ED, "choice received: " + lbl)
+            if ch["finish"] == "filmcraft": LL.step(ED, "filmcraft", "todo", "after the edit is finished")
+            return self.send_json({"ok": True, "choice": ch})
+        if path == "/api/filmcraft":   # open the finished edit in FilmCraft (runs filmcraft_open.py; no Claude needed)
+            global FC_PROC
+            if FC_PROC and FC_PROC.poll() is None: return self.send_json({"ok": True, "running": True})
+            if not os.path.exists(os.path.join(ED, "plan.json")): return self.send_json({"ok": False, "error": "edit not ready yet"})
+            FC_PROC = subprocess.Popen([sys.executable, os.path.join(HERE, "filmcraft_open.py"), SRC or ED],
+                                       stdout=open(os.path.join(ED, "filmcraft_open.log"), "w"), stderr=subprocess.STDOUT)
+            return self.send_json({"ok": True, "started": True})
+        self.send_error(404)
+
     def do_GET(self):
         u = urlparse(self.path); q = parse_qs(u.query); path = unquote(u.path)
-        if path in ("/", "/index.html"): return self.send_file(os.path.join(ROOT, "templates", "live.html"))
+        if path in ("/", "/index.html"):
+            b = open(os.path.join(ROOT, "templates", "live.html"), encoding="utf-8").read().replace("__PAGE_TOKEN__", PAGE_TOKEN).encode()
+            self.send_response(200); self.send_header("Content-Type", TYPES[".html"]); self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b); return
         if path == "/api/state":
             st = self.state(); st["progress"] = self.progress(); st["edit_dir"] = ED
+            st["styles"] = {k: {"label": v["label"], "tagline": v.get("tagline", "")} for k, v in
+                            json.load(open(os.path.join(ROOT, "styles", "edit_styles.json"), encoding="utf-8")).items()}
+            try:
+                import filmcraft_open as FCO; fc = FCO.find_fc([]); st["filmcraft_installed"] = bool(fc and os.path.exists(fc))
+            except Exception: st["filmcraft_installed"] = False
+            st["filmcraft_running"] = bool(FC_PROC and FC_PROC.poll() is None)
+            fd = os.path.join(ED, "filmcraft")
+            shots = sorted([x for x in os.listdir(fd) if x.startswith("screen_") and x.endswith(".png")]) if os.path.isdir(fd) else []
+            st["filmcraft_screen"] = ("filmcraft/" + shots[-1]) if shots else None
+            cp = os.path.join(ED, "choice.json")
+            if os.path.exists(cp):
+                try: st["choice"] = json.load(open(cp, encoding="utf-8"))
+                except Exception: pass
             for k in ("plan.json", "intake.json"):
                 fp = os.path.join(ED, k)
                 if os.path.exists(fp):

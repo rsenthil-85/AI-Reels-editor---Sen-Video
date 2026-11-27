@@ -91,3 +91,14 @@ work around Smart App Control.
 
 Bundled code must be MIT or ISC. Non-MIT dependencies are opt-in installer flags (-AllowNonMIT, -WithRNNoise).
 See LICENSES.md.
+
+
+## Render speed round 2 (2026-11-27) - measured on part 1 of 4 (14 s, 1080x1920, Clean cards)
+- Upstream of an `overlay ... enable=` window, ffmpeg still computes every frame. Biggest waste: grading the
+  upscaled 1080x1920 frame. Crop + grade at source resolution, then scale: 54.6 s -> 20.5 s (filters only).
+- Zoom branch (scale to 1.14x + crop every frame, shown only at punch-ins): 11.6 s. Replaced by `sendcmd` driving
+  `crop@z` w/h/x/y at the punch times before the single upscale - zero extra cost, same framing.
+- After that the encoder dominates: x264 faster CRF 19 44.2 s; veryfast CRF 18 33.1 s (SSIM 0.98753 vs 0.98765
+  against a CRF 10 reference); h264_qsv ICQ 20 30.0 s (0.98673); ICQ 17 39.7 s (0.98803, 15 MB).
+- Whole reel: 223 s -> 125 s. Old vs new SSIM 0.969 overall; the only differing pixels are the faint moving paper
+  texture of the card background (loop phase), text/graphics/face identical.

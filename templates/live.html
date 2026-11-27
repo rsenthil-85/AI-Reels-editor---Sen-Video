@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Live edit</title>
+<title>Edit your video</title>
 <style>
 @font-face{font-family:Pop;src:url(/assets/fonts/Poppins-Medium.ttf);font-weight:500}
 @font-face{font-family:Pop;src:url(/assets/fonts/Poppins-Bold.ttf);font-weight:700}
@@ -29,13 +29,37 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
 .words{font-size:13px;line-height:1.9;max-height:220px;overflow:auto}.words s{color:#B0ADA5;text-decoration-color:#E5484D}.words .now{background:var(--hl);border-radius:4px}
 .words span{cursor:pointer}
 .notes{font-size:12px;color:var(--mute);max-height:120px;overflow:auto}
+.choose h3{font-size:14px;margin:14px 0 8px;font-weight:700}.choose h3:first-child{margin-top:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.tile{border:2px solid var(--line);border-radius:12px;padding:8px;cursor:pointer;background:#fff;text-align:left;font:inherit;color:inherit}
+.tile:hover{border-color:#C9C5BB}.tile.on{border-color:var(--acc);background:#F3F7FF}
+.tile img{width:100%;border-radius:8px;display:block;background:#eee}.tile b{display:block;margin-top:6px;font-size:13px}.tile span{font-size:11px;color:var(--mute)}
+.tile textarea{width:100%;min-height:70px;margin-top:6px;border:1px solid var(--line);border-radius:8px;padding:6px;font:inherit;font-size:12px;resize:vertical}
+.pills{display:flex;gap:8px;flex-wrap:wrap}.pills button{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer;color:inherit}
+.pills button.on{border-color:var(--acc);background:#F3F7FF;color:var(--acc)}.pills button:disabled{opacity:.45;cursor:not-allowed}
+.go{margin-top:14px;background:var(--acc);color:#fff;border:0;border-radius:10px;padding:10px 22px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.go:disabled{opacity:.5;cursor:wait}.err{color:#E5484D;font-size:12px;margin-left:10px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}.duo.one{grid-template-columns:1fr}
+.fcbox img{width:100%;border-radius:10px;border:1px solid var(--line);display:block}.fcbox .sub{display:block;margin-top:6px}
+.fcbtn{margin-top:8px;background:#16181D;color:#fff;border:0;border-radius:10px;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer}.fcbtn:disabled{opacity:.45}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mute);margin-top:4px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 </style></head><body><div class="wrap">
-<header><h1>Live edit</h1><span class="sub" id="vname"></span><span class="pill" id="style" hidden></span><span class="sub" id="clock"></span></header>
+<header><h1>Edit your video</h1><span class="sub" id="vname"></span><span class="pill" id="style" hidden></span><span class="sub" id="clock"></span></header>
 <div class="bar"><i id="overall"></i></div>
+<div class="card choose" id="choose" hidden>
+ <h3>1. Pick a style</h3><div class="tiles" id="tiles"></div>
+ <h3>2. How long?</h3><div class="pills" id="lens"></div>
+ <h3>3. Extras</h3><div class="pills" id="extras"></div>
+ <h3>4. How do you want to finish?</h3><div class="pills" id="finish"></div><div class="sub" id="fcnote"></div>
+ <button class="go" id="go" type="button">Start editing</button><span class="err" id="err"></span>
+</div>
+<div class="card" id="chosen" hidden style="margin-bottom:14px"></div>
 <div class="grid">
  <div class="card"><h2>What it is doing</h2><ul class="steps" id="steps"></ul></div>
- <div class="card"><h2 id="vtitle">Your video</h2><video id="v" controls playsinline preload="metadata"></video><div class="vlabel" id="vlabel"></div></div>
+ <div class="card"><div class="duo one" id="duo">
+  <div><h2 id="vtitle">Your video</h2><video id="v" controls playsinline preload="metadata"></video><div class="vlabel" id="vlabel"></div></div>
+  <div class="fcbox" id="fcbox" hidden><h2>FilmCraft (touch-up editor)</h2><a id="fclink" target="_blank" title="Click to see it full size"><img id="fcimg" alt="FilmCraft window" style="cursor:zoom-in"></a><span class="sub" id="fcstate"></span>
+   <button class="fcbtn" id="fcbtn" type="button">Open in FilmCraft</button></div></div></div>
 </div>
 <div class="card" style="margin-top:14px"><h2>Timeline (click to jump)</h2><div class="tl" id="tl"></div>
  <div class="legend"><span><i style="background:var(--ok)"></i>kept</span><span><i style="background:var(--cut)"></i>cut out</span><span><i style="background:#2F6FED"></i>full card</span><span><i style="background:#7C3AED"></i>top panel</span><span><i style="background:#E8603C"></i>sticker / overlay</span><span><i style="background:#F2C524"></i>zoom-in</span></div></div>
@@ -46,12 +70,61 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
 <script>
 const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 let S={}, WD={}, curSrc='', wordsKey='', shown=new Set();
+
+const TOKEN='__PAGE_TOKEN__';
+let pick={style:null,describe:'',length:'full',extras:null,finish:'auto'}, built=false;
+const EXTRAS=[['music','Music'],['zooms','Zoom-ins'],['stickers','Icon stickers'],['checklist','Recap checklist']];
+function chooseUI(){
+ const show=!S.choice&&!(S.plan&&S.plan._style); $('choose').hidden=!show;
+ if(S.choice){const c=S.choice,l=c.style==='describe'?'Your own: '+c.describe:(S.styles?.[c.style]?.label||c.style);
+  $('chosen').hidden=false;$('chosen').innerHTML=`<b>Your choice:</b> ${esc(l)} &middot; ${c.length==='full'?'full length':c.length+' s'} &middot; ${esc(c.extras.join(', ')||'no extras')} &middot; ${c.finish==='filmcraft'?'then touch up in FilmCraft':'done for you'}`}
+ const ik=S.intake?1:0; if(!show||!S.styles||built===ik+1)return; built=ik+1;
+ const rec=S.intake?.recommended||{}; pick.style=pick.style||rec.style||'mixed';   // keep what the user already clicked
+ if(!pick.extras)pick.extras=['music'].concat((rec.extras||[]).includes('zooms')?['zooms']:[]).concat(['stickers']);
+ const ord=['studio','mixed','simple'].filter(k=>S.styles[k]);
+ $('tiles').innerHTML=ord.map(k=>`<button type="button" class="tile" data-k="${k}"><img src="/assets/gallery/style_${k}.jpg" alt=""><b>${esc(S.styles[k].label)}${k===rec.style?' (recommended)':''}</b><span>${esc(S.styles[k].tagline)}</span></button>`).join('')
+  +`<div class="tile" data-k="describe"><b>Describe your own</b><span>Tell me the look you want, or paste a link to a reel you like</span><textarea id="desc" placeholder="e.g. yellow pill captions, no music, fast cuts"></textarea></div>`;
+ document.querySelectorAll('.tile').forEach(t=>t.onclick=e=>{pick.style=t.dataset.k;paint()});
+ $('desc').oninput=e=>{pick.describe=e.target.value;pick.style='describe';paint()};
+ const cut=S.cut_seconds||S.intake?.cut_seconds||0;
+ $('lens').innerHTML=[['full','Full'+(cut?' ('+Math.round(cut)+' s)':'')],['60','About 60 s'],['30','About 30 s']].map(([k,l])=>`<button type="button" data-k="${k}" ${k!=='full'&&cut&&cut<+k+5?'disabled':''}>${l}</button>`).join('');
+ const ex=(S.intake?.background?.keyable?[['bg_replace','Swap the background']]:[]).concat(EXTRAS);
+ $('extras').innerHTML=ex.map(([k,l])=>`<button type="button" data-k="${k}">${l}</button>`).join('');
+ if(S.intake?.background?.keyable&&!pick.extras.includes('bg_replace'))pick.extras.push('bg_replace');
+ $('finish').innerHTML=`<button type="button" data-k="auto">Done for me</button><button type="button" data-k="filmcraft" ${S.filmcraft_installed?'':'disabled'}>Done for me + touch up in FilmCraft</button>`;
+ $('fcnote').textContent=S.filmcraft_installed?'FilmCraft opens next to this page after the edit, with everything on its timeline for your changes.':'FilmCraft is not installed: ask in the chat to add it (free, optional).';
+ $('lens').onclick=e=>{const b=e.target.closest('button');if(b&&!b.disabled){pick.length=b.dataset.k;paint()}};
+ $('extras').onclick=e=>{const b=e.target.closest('button');if(b){const k=b.dataset.k;pick.extras=pick.extras.includes(k)?pick.extras.filter(x=>x!==k):pick.extras.concat([k]);paint()}};
+ $('finish').onclick=e=>{const b=e.target.closest('button');if(b&&!b.disabled){pick.finish=b.dataset.k;paint()}};
+ $('go').onclick=async()=>{
+  if(pick.style==='describe'&&!pick.describe.trim()){$('err').textContent='Write what you want first, or pick a style';return}
+  $('err').textContent='';$('go').disabled=true;
+  try{const r=await (await fetch('/api/choose',{method:'POST',headers:{'Content-Type':'application/json','X-Page-Token':TOKEN},body:JSON.stringify(pick)})).json();
+   if(!r.ok)throw 0}catch(e){$('err').textContent='Could not send - try again';$('go').disabled=false}};
+ paint();
+}
+function paint(){
+ document.querySelectorAll('.tile').forEach(t=>t.classList.toggle('on',t.dataset.k===pick.style));
+ document.querySelectorAll('#lens button').forEach(b=>b.classList.toggle('on',b.dataset.k===pick.length));
+ document.querySelectorAll('#extras button').forEach(b=>b.classList.toggle('on',pick.extras.includes(b.dataset.k)));
+ document.querySelectorAll('#finish button').forEach(b=>b.classList.toggle('on',b.dataset.k===pick.finish));
+}
+function filmcraftUI(){
+ const st=S.steps?.filmcraft, ready=S.steps?.done?.state==='done', want=S.choice?.finish==='filmcraft';
+ const show=!!(st||want||(ready&&S.filmcraft_installed)); $('fcbox').hidden=!show; $('duo').classList.toggle('one',!show);
+ if(!show)return;
+ if(S.filmcraft_screen){const src='/e/'+S.filmcraft_screen;if(!$('fcimg').src.endsWith(encodeURI(src))){$('fcimg').src=src;$('fclink').href=src}$('fcimg').hidden=false}else $('fcimg').hidden=true;
+ $('fcstate').textContent=st?(st.detail||''):(want?'Opens here after the edit is finished.':'Want to change something by hand? Open the edit in FilmCraft.');
+ $('fcbtn').hidden=!(ready&&S.filmcraft_installed); $('fcbtn').disabled=S.filmcraft_running||st?.state==='doing';
+ $('fcbtn').textContent=st?.state==='done'?'Open in FilmCraft again':'Open in FilmCraft';
+}
+$('fcbtn').onclick=async()=>{$('fcbtn').disabled=true;try{await fetch('/api/filmcraft',{method:'POST',headers:{'Content-Type':'application/json','X-Page-Token':TOKEN},body:'{}'})}catch(e){}};
 const fmt=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 async function poll(){
  try{S=await (await fetch('/api/state',{cache:'no-store'})).json()}catch(e){setTimeout(poll,1500);return}
  $('vname').textContent=S.video||''; if(S.style){$('style').hidden=false;$('style').textContent=S.style}
  if(S.start)$('clock').textContent=(S.steps&&S.steps.done&&S.steps.done.state==='done'?'finished in ':'')+fmt(((S.steps?.done?.t1)||Date.now()/1000)-S.start);
- steps(); video(); timeline();
+ chooseUI(); filmcraftUI(); steps(); video(); timeline();
  const k=JSON.stringify([S.steps?.cut?.state,S.has_cut_mp4,S.plan&&S.plan.fix]); if(k!==wordsKey){wordsKey=k;loadWords()}
  graphics(); notes();
  setTimeout(poll,1000);
@@ -98,7 +171,7 @@ async function loadWords(){
  try{WD=await (await fetch('/api/words',{cache:'no-store'})).json()}catch(e){return}
  const w=WD.words||[], segs=WD.segments||[]; if(!w.length){$('words').innerHTML='<span class="sub">Listening...</span>';return}
  const FX=(S.plan&&S.plan.fix)||{}, fw=w=>{const c=w.replace(/[^\w$]/g,'');return FX[c]?w.replace(c,FX[c]):w};
- const kept=x=>!segs.length||segs.some(s=>x.s>=s.s-.05&&x.e<=s.e+.05);
+ const kept=x=>{if(!segs.length)return true;const k=segs.reduce((a,s)=>a+Math.max(0,Math.min(s.e,x.e)-Math.max(s.s,x.s)),0);return k>=Math.min(.3,(x.e-x.s)*.5)};  // a slow word trimmed inside still counts as kept
  $('words').innerHTML=w.map(x=>{if(!kept(x))return `<s>${esc(fw(x.w))}</s>`;const c=toCut(x.s);return `<span data-c="${c.toFixed(2)}" data-e="${(c+x.e-x.s).toFixed(2)}">${esc(fw(x.w))}</span>`}).join(' ');
  document.querySelectorAll('.words span[data-c]').forEach(e=>e.onclick=()=>{$('v').currentTime=+e.dataset.c;$('v').play()});
  tlKey='';

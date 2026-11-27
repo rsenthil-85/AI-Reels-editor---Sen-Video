@@ -12,7 +12,7 @@ description: >-
 
 # pro-video-editor
 
-Version 1.7.0 - see CHANGELOG.md. How it works, what was measured and why: `references/engineering-notes.md`
+Version 1.9.2 - see CHANGELOG.md. How it works, what was measured and why: `references/engineering-notes.md`
 (read it before changing the pipeline). Recording advice for users: `references/recording-guide.md`.
 
 Every video goes: **gallery + style question (instant, analysis runs behind it) -> short brief -> edit -> stills -> final**.
@@ -21,19 +21,33 @@ Every video goes: **gallery + style question (instant, analysis runs behind it) 
 If `.venv` is missing, tell the user to run `install.ps1`; never install interpreters yourself and never
 disable or work around Windows security prompts.
 
-## 0. The moment a video arrives: gallery + style question (no waiting)
+## 0. The moment a video arrives: ONE edit page (choose, watch, touch up)
 
-1. Start the analysis in the background (Bash `run_in_background`): `PY S/autoedit.py <video> --analyze`
-2. Show the styles as PICTURES, not just words (users do not understand style names alone). If an inline visual
-   tool is available (show_widget), use ONE visual form: style options as tiles with a small SVG mock-up of each
-   reel (A: dark title band + lime number + phone; B: card above a rounded face window; C: face + highlighted caption),
-   plus length and extras pills on the same form. Add a 4th tile **Describe your own** with a text box
-   ("tell me the look you want, or paste a link to a reel you like"). The question dialog (AskUserQuestion) hides the chat, so never rely
-   on an image sent just before it. Otherwise send (made once by `scripts/make_gallery.py`, an illustrated presenter,
-   no real person) and ask the style question (section 2). The user picks while the video is transcribed and cut.
-3. Then the rest of the brief; for Clean cards / Face and captions send `assets/gallery/looks.jpg` with the Look question.
-   Offer "see the looks on my own footage" only if they ask (`looks_preview.py`, ~10-60 s after the analysis).
+Everything happens on one page in the browser pane on the right (templates/live.html served by scripts/live.py):
+the user picks the style there, watches the edit, and can finish in FilmCraft from the same page.
+
+1. Start, all in the background (Bash `run_in_background`), in this order:
+   - `PY S/live.py <video> --port 8765` (pick another port if busy), then open `http://127.0.0.1:8765/` in the browser
+     pane and SHOW the pane (tabs_context; show_pane "preview" - a hidden pane is invisible to the user)
+   - `PY S/autoedit.py <video> --analyze`
+   - the hand-off wait: `until [ -f "<name>_edit/choice.json" ]; do sleep 1; done; cat "<name>_edit/choice.json"`
+2. Tell the user in one or two lines: "Pick your style on the right and press Start editing - it's analysing your
+   video meanwhile." The page shows the gallery pictures (assets/gallery/style_*.jpg), "Describe your own", length
+   (full / 60 / 30, only what fits), extras (music, zoom-ins, icon stickers, recap checklist) and how to finish:
+   **Done for me** or **Done for me + touch up in FilmCraft** (only enabled when FilmCraft is installed).
+   If the user answers in the chat instead, write the same choice.json yourself and carry on.
+3. When the wait finishes, read choice.json and map it: style -> answers.json `style` ("describe": nearest style +
+   the user's words as overrides, see section 3); length full/60/30 -> format reel_full/reel_60/reel_30; extras
+   music/zooms -> extras; stickers/checklist -> you add `sticker` overlays / a `checklist` card; always include
+   "graphics". Look: the user's last profile, else Clean Paper. Then section 3 (edit) and section 4 (render).
+4. finish = "filmcraft": after compose.py finishes, run `PY S/filmcraft_open.py <video>` (background). The page shows
+   FilmCraft's progress and a picture of its window next to our video; FilmCraft itself opens as a desktop window
+   with the edit on its timeline. The page also has an "Open in FilmCraft" button after any finished edit.
+Tell the user where to look; do not repeat the page's content in the chat.
 If a template or style changes, re-run `PY S/make_gallery.py` (about 5 s) so the gallery matches what the skill makes.
+Fallback without a browser pane: the inline picker (show_widget: style tiles with small SVG mock-ups + Describe
+your own + length + extras), never style names alone; AskUserQuestion hides the chat, so never rely on an image sent
+just before it.
 
 ## Live edit page (on by default): the user watches the edit happen
 
@@ -166,6 +180,21 @@ plan.json from `--answers` already has `layout: studio`, `grade: "warm"`, `capti
 - **End**: `"outro": {"dur": 3, "gfx": {"type":"endcard","lines":"a|b|c","hl":2,"icon":"message-circle"}}` adds
   3 s after the last word (frozen frame, music runs on, the card covers it). Never use another company's logo (WhatsApp, YouTube...): a plain icon, and the name in the text.
 Full-screen graphics of this style render as opaque video (device at 15 fps): about 2 s each.
+
+## Optional: open the edit in FilmCraft (hand tweaks on a real timeline)
+
+After delivering, if FilmCraft is installed (`install.ps1 -WithFilmCraft`, or ~/.pro-video-editor/filmcraft.json exists),
+offer one button: "Open in FilmCraft to adjust by hand". On yes:
+```
+PY S/filmcraft_open.py <video>          (~15-40 s; FilmCraft opens as its own desktop window)
+```
+It builds the edit live on FilmCraft's timeline: the original cut into its kept parts (V1/A1, scaled to fill the frame,
+phone rotation handled), a page-colour matte under full cards (V2), our graphics as ProRes 4444 (V3, placed like
+compose places them), stickers at their x/y (V4), captions (C1, Poppins), music at music_db (A2), and saves
+`<name>_edit/filmcraft/<name>.fcproj`. Tell the user: it is for hand changes and review; FilmCraft does not reproduce
+our caption styles (duo/stack/karaoke) or the card + face-window layout, so the reel from compose.py stays the final file.
+Not installed? Say it is an optional free app (MIT or Apache-2.0, ~115 MB) and ask before running the installer switch.
+Never disable Windows security for it; if Smart App Control blocks it, wait and retry.
 
 ## Wording sounds human (default, always on)
 

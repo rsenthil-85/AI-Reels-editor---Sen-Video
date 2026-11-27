@@ -36,6 +36,9 @@ Editing styles (`styles/edit_styles.json`):
 - **Clean cards** - cards above your face in a rounded window, full-screen cards, serif key-word captions.
 - **Face and captions** - your face all the way, zoom-ins, word-highlight captions, title, stickers, recap checklist.
 
+Optional: `install.ps1 -WithFilmCraft` adds FilmCraft (free editor, MIT or Apache-2.0); after an edit the skill can
+open it on FilmCraft's timeline for hand changes (`scripts/filmcraft_open.py`).
+
 Not in this repo (too big for GitHub, downloaded on install or on first use): the Whisper speech model, the
 BiRefNet person model (`install.ps1`), and the narrator voice for vendor/lemo-opuscar (`kokoro-v1.0.onnx` and
 `voices-v1.0.bin`, ~340 MB, from the kokoro-onnx project releases, into `vendor/lemo-opuscar/core/tts/`).

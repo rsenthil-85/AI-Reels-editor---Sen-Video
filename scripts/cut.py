@@ -90,10 +90,14 @@ def main():
         st = [float(x) for x in re.findall(r"silence_start: (-?[\d.]+)", sd)]
         en = [float(x) for x in re.findall(r"silence_end: ([\d.]+)", sd)] + [dur]
         sil = [(max(0, s0) + pad, e0 - pad) for s0, e0 in zip(st, en) if e0 - s0 > gap]
-        # never let a "silence" eat a normal-length word (quiet words read as silence); only trim
-        # pauses between words or inside stretched words (> 0.6 s)
+        # never let a "silence" eat a word (quiet words read as silence); only trim pauses between words or
+        # inside stretched words (> 0.6 s) - and even a stretched word keeps at least 0.4 s ("swap", "exclusively"
+        # said slowly were being removed whole, which changed the meaning)
         def eats(a0, b0):
-            return any(x["e"] - x["s"] <= 0.6 and min(b0, x["e"]) - max(a0, x["s"]) > 0.3 * (x["e"] - x["s"]) for x in keep)
+            for x in keep:
+                d = x["e"] - x["s"]; ov = min(b0, x["e"]) - max(a0, x["s"])
+                if (d <= 0.6 and ov > 0.3 * d) or (d > 0.6 and ov > d - 0.4): return True
+            return False
         sil = [(a0, b0) for a0, b0 in sil if not eats(a0, b0)]
         new = []
         for s0, e0 in segs:

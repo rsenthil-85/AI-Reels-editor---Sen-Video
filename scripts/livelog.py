@@ -9,6 +9,8 @@ STEPS = [("analyse", "Listening to your video"), ("cut", "Cutting pauses, umms a
          ("graphics", "Making the graphics"), ("render", "Putting the video together"), ("audio", "Cleaning voice, mixing music"),
          ("done", "Finished")]
 
+EXTRA = {"filmcraft": "Opening it in FilmCraft for touch-ups"}
+
 def _path(edit_dir): return os.path.join(edit_dir, "live.json")
 
 def _load(edit_dir):
@@ -32,7 +34,10 @@ def reset(edit_dir, **info):
 def step(edit_dir, key, state="doing", detail=None, **info):
     """state: todo | doing | done. detail: one short human line ("23 pauses cut")."""
     try:
-        d = _load(edit_dir); s = d["steps"].setdefault(key, {"label": key, "state": "todo", "detail": ""})
+        d = _load(edit_dir)
+        if key not in d["steps"]:   # optional steps (FilmCraft touch-up) join the list when they start
+            d["steps"][key] = {"label": EXTRA.get(key, key), "state": "todo", "detail": ""}; d["order"].append(key)
+        s = d["steps"][key]
         s["state"] = state
         if detail is not None: s["detail"] = detail
         if state == "doing": s["t0"] = time.time()

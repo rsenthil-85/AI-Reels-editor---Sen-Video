@@ -135,6 +135,8 @@ def main():
         if bgi.get("keyable"):
             plan["bg_replace"] = {"bg": ans.get("bg_source", "auto:" + th["panel_bg_style"]), "key": bgi["key"],
                                   "base": th["panel_base"], "similarity": 0.12 if bgi["kind"].endswith("screen") else 0.14}
+            if bgi.get("flat"):   # flat digital green/blue: tight RGB key (see analyze.py)
+                plan["bg_replace"].update(method="colorkey", similarity=0.06, blend=0.03)
         elif feats.get("background_swap") == "all" and bgi.get("kind") in ("plain_wall", "busy") and os.path.exists(os.path.join(ROOT, "assets", "models", "birefnet_lite.onnx")):
             # wall too close to skin colour: matte-assisted key (MIT BiRefNet on one frame per second, ~11 s each)
             md = W("matte_moving")

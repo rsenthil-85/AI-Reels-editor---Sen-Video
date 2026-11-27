@@ -1,7 +1,7 @@
 <#
   pro-video-editor installer (Windows, PowerShell 5.1+)
 
-    powershell -ExecutionPolicy Bypass -File install.ps1 [-Target <skills dir>] [-WithRNNoise] [-AllowNonMIT] [-NoModels]
+    powershell -ExecutionPolicy Bypass -File install.ps1 [-Target <skills dir>] [-WithRNNoise] [-AllowNonMIT] [-NoModels] [-WithFilmCraft]
 
   - Copies this folder to %USERPROFILE%\.claude\skills\pro-video-editor (or -Target).
   - Python env (.venv) from the python.org Python 3.10-3.12 already installed (signed, so Windows Smart App
@@ -11,6 +11,9 @@
   - -WithRNNoise: fetches RNNoise voice-denoise models (GregorR/rnnoise-models; no explicit licence file - opt-in).
   - -AllowNonMIT: also installs optional libs that are NOT MIT/ISC (postprocessing: Zlib, @dimforge/rapier3d-compat:
     Apache-2.0, p5: LGPL-2.1) for the React Three / Claude Animation Base workflows. Off by default.
+  - -WithFilmCraft: downloads FilmCraft (free video editor, MIT or Apache-2.0, portable, ~115 MB) from its official
+    GitHub release, checks its SHA-256 against the published list, unzips it to <skill>\tools\filmcraft. Used by
+    scripts/filmcraft_open.py to open an edit on a real timeline for hand tweaks. Optional.
   Never disables Windows security features. If something is blocked, it stops and tells you.
 #>
 param(
@@ -18,7 +21,9 @@ param(
   [switch]$WithRNNoise,
   [switch]$WithMatte,
   [switch]$AllowNonMIT,
-  [switch]$NoModels
+  [switch]$NoModels,
+  [switch]$WithFilmCraft,
+  [string]$FilmCraftVersion = "0.20.1"
 )
 $ErrorActionPreference = "Stop"
 $Src = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -101,6 +106,27 @@ if (-not $NoModels) {
   Step "Whisper speech model (small, ~480 MB, first time only)"
   & $venvPy -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8'); print('  whisper ready')"
   if ($LASTEXITCODE -ne 0) { throw "whisper model step failed" }
+}
+
+if ($WithFilmCraft) {
+  Step "FilmCraft $FilmCraftVersion (optional hand-editing app, MIT or Apache-2.0, ~115 MB)"
+  $arch = if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { "arm64" } else { "x64" }
+  $zipName = "filmcraft-$FilmCraftVersion-windows-$arch-portable.zip"
+  $base = "https://github.com/storytold/filmcraft/releases/download/v$FilmCraftVersion"
+  $fcDir = Join-Path $Target "tools\filmcraft"; New-Item -ItemType Directory -Force $fcDir | Out-Null
+  $zip = Join-Path $fcDir $zipName
+  if (-not (Test-Path $zip)) { Invoke-WebRequest "$base/$zipName" -OutFile $zip }
+  $sums = (Invoke-WebRequest "$base/SHA256SUMS.txt" -UseBasicParsing).Content
+  $want = ($sums -split "`n" | Where-Object { $_ -match [regex]::Escape($zipName) } | ForEach-Object { ($_ -split "\s+")[0] }) | Select-Object -First 1
+  $got = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+  if (-not $want -or $got -ne $want.ToLower()) { Remove-Item $zip -Force; throw "FilmCraft download failed its checksum check - not installed" }
+  Expand-Archive $zip -DestinationPath (Join-Path $fcDir "app") -Force
+  $exe = Get-ChildItem (Join-Path $fcDir "app") -Recurse -Filter filmcraft.exe | Select-Object -First 1
+  if (-not $exe) { throw "filmcraft.exe not found in the download" }
+  $cfgDir = Join-Path $env:USERPROFILE ".pro-video-editor"; New-Item -ItemType Directory -Force $cfgDir | Out-Null
+  @{ exe = $exe.FullName; version = $FilmCraftVersion } | ConvertTo-Json | Out-File (Join-Path $cfgDir "filmcraft.json") -Encoding utf8
+  Write-Host "  FilmCraft ready: $($exe.FullName)"
+  Write-Host "  If Windows Smart App Control blocks it on first start, wait a minute and try again - never turn protection off."
 }
 
 Step "Self-test"

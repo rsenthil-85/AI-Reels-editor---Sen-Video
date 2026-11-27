@@ -73,8 +73,13 @@ def main():
         mx, mn = key.max(), key.min(); sat = (mx - mn) / (mx + 1e-6)
         kind = "green_screen" if (key[1] > key[0] + 40 and key[1] > key[2] + 40 and sat > .35) else                "blue_screen" if (key[2] > key[0] + 40 and key[2] > key[1] + 20 and sat > .35) else                "plain_wall" if uniform > .6 else "busy"
         keyable = kind in ("green_screen", "blue_screen") and overlap < .05 or kind == "plain_wall" and overlap < .02 and uniform > .75
+        # a perfectly flat DIGITAL screen (e.g. Canva background remover -> solid green) keys cleanly with a tight RGB
+        # colour key even when clothes are greenish (tested 2026-11-27: teal shirt on #096F26, colorkey 0.06 = no holes)
+        flat = kind in ("green_screen", "blue_screen") and uniform >= .85
+        if flat and not keyable: keyable = True
+        res["key_method"] = "colorkey_tight" if flat else ("chromakey" if kind in ("green_screen", "blue_screen") else "colorkey")
         res["background"] = {"kind": kind, "key": "#%02X%02X%02X" % tuple(int(v) for v in key), "uniform": round(uniform, 2),
-                             "subject_overlap": round(overlap, 3), "keyable": bool(keyable),
+                             "subject_overlap": round(overlap, 3), "keyable": bool(keyable), "flat": bool(flat),
                              "advice": None if keyable else "record in front of a green screen or a smooth wall whose colour is far from your skin and clothes, lit evenly"}
     except Exception as e:
         res["background"] = {"kind": "unknown", "keyable": False, "error": str(e)[:80]}

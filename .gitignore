@@ -35,3 +35,6 @@ snapshots/
 *.zip
 # (the skill's own synthesised sound effects are the one media exception)
 !assets/sfx/*.wav
+
+# optional apps downloaded by install.ps1 (FilmCraft)
+tools/

@@ -37,6 +37,14 @@ import livelog as LL
 
 IMG = (".png", ".jpg", ".jpeg", ".webp")
 
+def probe_wh(p):
+    """Display size of the first video stream (phones store portrait video sideways + a rotate flag)."""
+    st = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                                             "stream=width,height:stream_side_data=rotation:stream_tags=rotate", "-of", "json", p]))["streams"][0]
+    w, h = st["width"], st["height"]
+    rot = int(float(st.get("tags", {}).get("rotate", 0) or next((d.get("rotation", 0) for d in st.get("side_data_list", []) if "rotation" in d), 0)))
+    return (h, w) if abs(rot) % 180 == 90 else (w, h)
+
 def probe_dur(p):
     return float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", p]).decode().strip())
 
@@ -101,6 +109,7 @@ def main():
                             "-c:a", "aac", "-b:a", "192k", ext], check=True)
         src = ext; dur = probe_dur(src)
         inserts.append({"t0": round(dur - n, 3), "t1": round(dur, 3), "mode": "full", "gfx": o["gfx"], "sfx": o.get("sfx", "whoosh")})
+    SRC_WH = probe_wh(src)   # display size (rotation-aware) for source-resolution grading
     # ---- render graphics
     jobs = []  # graphics render in parallel (each is its own headless browser)
     CACHE = os.path.join(os.path.expanduser("~"), ".pro-video-editor", "cache"); os.makedirs(CACHE, exist_ok=True)
@@ -165,7 +174,7 @@ def main():
         bsrc = br.get("bg", "auto:" + P.get("bg_style", "paper"))
         if bsrc.startswith("auto"):
             st = bsrc.split(":", 1)[1] if ":" in bsrc else "paper"
-            bg_full = gfx({"style": st, "acc": P.get("accent", "#E8603C"), "base": br.get("base", P.get("panel_base", "#16233F")),
+            bg_full = gfx({"style": st, "acc": br.get("acc", P.get("accent", "#E8603C")), "base": br.get("base", P.get("panel_base", "#16233F")),
                            "type": "motionbg", "_tpl": "motionbg.html"}, W, H, 8.0, f"fullbg_{st}")
         else: bg_full = rp(bsrc)
         if br.get("key", "auto") == "auto": br["key"] = key_colour(src)
@@ -234,6 +243,7 @@ def main():
             if P.get("grade") == "warm":   # studio look (ref 7): warm cinematic - rich contrast, amber mids, teal-free shadows, deeper vignette
                 grade = (",eq=contrast=1.14:saturation=1.10:gamma=0.95,colorbalance=rs=0.06:gs=0.0:bs=-0.06:rm=0.05:gm=0.0:bm=-0.05:rh=0.03:bh=-0.03,"
                          "curves=master='0/0.02 0.25/0.22 0.75/0.79 1/0.98',vignette=angle=0.55")
+            gcol = grade; gcas = f",cas={P['sharpen']}" if P.get("sharpen") else ""
             if P.get("sharpen"): grade += f",cas={P['sharpen']}"
             f = [f"[0:v]setpts=PTS-STARTPTS+{S:.3f}/TB,fps=30,{cover(W, H) if not reel else ''}".rstrip(",")]
             if reel:  # vertical: cover with face-aware crop
@@ -243,7 +253,8 @@ def main():
                 kb = n_in; args.extend(["-stream_loop", "-1", "-ss", f"{S % 8.0:.3f}", "-i", bg_full] if not bg_full.lower().endswith(IMG) else ["-loop", "1", "-i", bg_full]); n_in += 1
                 kc = br["key"].lstrip("#"); r_, g_, b_ = int(kc[0:2], 16), int(kc[2:4], 16), int(kc[4:6], 16)
                 spill = ",despill=type=green" if g_ > r_ + 30 and g_ > b_ + 30 else (",despill=type=blue" if b_ > r_ + 30 and b_ > g_ + 30 else "")
-                screen = bool(spill)   # saturated green/blue screen -> chroma (UV) key; plain wall -> RGB colour key incl. brightness
+                screen = bool(spill) and br.get("method") != "colorkey"   # saturated screen -> chroma (UV) key; plain wall or a
+                # flat digital screen ("method": "colorkey") -> RGB colour key incl. brightness (chromakey left people see-through)
                 keyf = (f"chromakey=0x{kc}:{br.get('similarity', 0.12)}:{br.get('blend', 0.08)}{spill}" if screen
                         else f"colorkey=0x{kc}:{br.get('similarity', 0.14)}:{br.get('blend', 0.08)}")
                 md = br.get("matte")
@@ -259,14 +270,47 @@ def main():
                              f"[ka][kc]blend=all_mode=lighten:eof_action=repeat[a1];[a1][ko]blend=all_mode=multiply:eof_action=repeat[am];"
                              f"[kin2]format=yuv420p[kv];[kv][am]alphamerge[fgk]")
                 else:
-                    f[0] += f",format=yuva420p,{keyf}[fgk]"
+                    if br.get("method") == "colorkey" and (g_ > r_ + 30 or b_ > r_ + 30):
+                        # flat digital screen: tight key, then kill the green/blue fringe on hair and shoulders -
+                        # despill the edge colour and pull the matte in ~2 px with a 1 px soften (tested: fringe gone)
+                        dt = "green" if g_ >= b_ else "blue"
+                        f[0] += f",format=rgba,{keyf},despill=type={dt}:mix=0.6:expand=0.3,split=2[kc1][kc2]"
+                        f.append("[kc2]alphaextract,erosion,erosion,boxblur=1:1[kal];[kc1][kal]alphamerge[fgk]")
+                    else:
+                        f[0] += f",format=yuva420p,{keyf}[fgk]"
                 f.append(f"[{kb}:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},trim=0:{(E if E is not None else dur) - S:.3f},setpts=PTS-STARTPTS+{S:.3f}/TB,"
                          f"format=yuv420p[kbg];[kbg][fgk]overlay=0:0:shortest=0{grade},format=yuv420p,split=4[b0][bz][bs][bb]")
+            if br:
+                # punch-in stream (background-swap path keeps the full-size method)
+                f.append(f"[bz]scale={int(W * Z)//2*2}:{int(H * Z)//2*2},crop={W}:{H}:(iw-{W})/2:'(ih-{H})*{fy}'[z]")
+                f.append(f"[b0][z]overlay=0:0:enable='{en([(p['t0'], p['t1']) for p in punch])}'[v0]")
             else:
-                f[0] += f"{grade},format=yuv420p,split=4[b0][bz][bs][bb]"
-            # punch-in stream
-            f.append(f"[bz]scale={int(W * Z)//2*2}:{int(H * Z)//2*2},crop={W}:{H}:(iw-{W})/2:'(ih-{H})*{fy}'[z]")
-            f.append(f"[b0][z]overlay=0:0:enable='{en([(p['t0'], p['t1']) for p in punch])}'[v0]")
+                # SPEED (same picture): crop to the frame shape and colour-grade at the SOURCE resolution, then scale up once.
+                # Phone/WhatsApp footage is ~576x1024, so the grade touches 3.5x fewer pixels (measured 54.6 s -> 20.5 s per part).
+                # Zoom-ins are the same crop shrinking at the punch times (sendcmd) instead of a second full-size zoomed copy
+                # of every frame. Footage bigger than the frame is scaled down first, then graded.
+                sw_, sh_ = SRC_WH
+                CW = int(min(sw_, sh_ * W / H)) // 2 * 2; CH = int(min(sh_, sw_ * H / W)) // 2 * 2
+                fxc, fyc = (fx, max(0, min(1, fy - 0.1))) if reel else (0.5, 0.5)
+                CX = int((sw_ - CW) * fxc) // 2 * 2; CY = int((sh_ - CH) * fyc) // 2 * 2
+                small = CW * CH <= W * H
+                pre, post = (gcol, gcas) if small else ("", gcol + gcas)
+                wins = [p for p in punch if live(p["t0"], p["t1"])]
+                zcrop = ""
+                if wins:
+                    ZW, ZH = int(CW / Z) // 2 * 2, int(CH / Z) // 2 * 2; ZX = (CW - ZW) // 2 // 2 * 2; ZY = int((CH - ZH) * fy) // 2 * 2
+                    on = f"[enter] crop@z w {ZW}, [enter] crop@z h {ZH}, [enter] crop@z x {ZX}, [enter] crop@z y {ZY}"
+                    off = f"[leave] crop@z w {CW}, [leave] crop@z h {CH}, [leave] crop@z x 0, [leave] crop@z y 0"
+                    open(os.path.join(work, f"zoom_{tag}.cmd"), "w").write("".join(f"{p['t0']:.3f}-{p['t1']:.3f} {on}, {off};\n" for p in wins))
+                    zcrop = f"sendcmd=f=zoom_{tag}.cmd,crop@z=w={CW}:h={CH}:x=0:y=0,"
+                f[0] = f"[0:v]setpts=PTS-STARTPTS+{S:.3f}/TB,fps=30,crop={CW}:{CH}:{CX}:{CY}{pre},split=3[g0][gs][gb]"
+                f.append(f"[g0]{zcrop}scale={W}:{H}{post},format=yuv420p[v0]")
+                if reel and top_win:   # face for the split / inset window: cut from the source too (the crop below becomes a no-op)
+                    FHs = int(CH * (H - TOP_H) / H) // 2 * 2; ys = int(max(0, min(CH - FHs, CH * fy - FHs * 0.45))) // 2 * 2
+                    f.append(f"[gs]crop={CW}:{FHs}:0:{ys},scale={W}:{H - TOP_H}{post},format=yuv420p[bs]")
+                else: f.append("[gs]null[bs]")
+                if any(it.get("mode") == "bubble" for it in inserts): f.append(f"[gb]scale={W}:{H}{post},format=yuv420p[bb]")
+                else: f.append("[gb]null[bb]")
             cur = "v0"
             # split-stack base: face crop in bottom, dark top
             if reel and top_win:
@@ -413,7 +457,9 @@ def main():
 
 
         script = os.path.join(work, f"compose_filter_{tag}.txt"); open(script, "w", encoding="utf-8").write(";\n".join(f))
-        x264 = ["-c:v", "libx264", "-preset", "ultrafast" if preview else P.get("preset", "faster"), "-crf", "26" if preview else "19",
+        # veryfast + CRF 18 = same quality as faster + CRF 19 (SSIM 0.98753 vs 0.98765 against a near-lossless reference),
+        # 25% faster, ~9% bigger file (measured 2026-11-27 on a 1080x1920 card + face reel)
+        x264 = ["-c:v", "libx264", "-preset", "ultrafast" if preview else P.get("preset", "veryfast"), "-crf", "26" if preview else str(P.get("crf", 18)),
                 "-pix_fmt", "yuv420p"]
         if mode == "video":
             tail_args = ["-map", "[vout]", "-an"] + x264 + ["-threads", str(threads), "-frames:v", str(nframes), out_path]
@@ -423,6 +469,7 @@ def main():
             tail_args = ["-map", "[vout]", "-map", "[aout]"] + x264 + ["-threads", "0", "-c:a", "aac", "-b:a", "192k",
                          "-movflags", "+faststart", "-t", f"{dur:.3f}", out_path]
         args += ["-/filter_complex", os.path.basename(script), "-progress", f"prog_{tag}.txt", "-stats_period", "1"] + tail_args
+        json.dump(args, open(os.path.join(work, f"args_{tag}.json"), "w"))   # exact command, for profiling / debugging
         for attempt in range(3):   # ffmpeg can crash (access violation) when several big jobs run at once: retry
             r = subprocess.run(args, cwd=work)
             if r.returncode == 0: break

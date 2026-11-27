@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.9.2 - 2026-11-27 (green screen)
+- Flat digital green/blue screens (e.g. Canva background remover) count as swappable even with greenish clothes, and use a
+  tight RGB colour key (similarity 0.06) instead of chromakey, which left the person partly see-through.
+- Fringe fix for those keys: despill + matte pulled in ~2 px + 1 px soften (green halo on hair gone). Known trade-off:
+  despill also cools green-tinted clothes (teal shirt reads navy).
+- The edit page offers "Swap the background" when the analysis finds a keyable background, and refreshes once the
+  analysis arrives without losing what the user already clicked.
+
+## 1.9.1 - 2026-11-27 (speed, same quality)
+- Final render 223 s -> 125 s for a 56 s Clean cards reel (measured, same machine, same plan):
+  colour grade + crop at the SOURCE resolution, then one upscale (phone footage is ~576x1024: 3.5x fewer pixels);
+  zoom-ins are one crop that shrinks at the punch times (sendcmd) instead of a second full-size zoomed copy of every
+  frame; the inset face window is cut from the source too; x264 veryfast CRF 18 instead of faster CRF 19
+  (SSIM vs near-lossless 0.98753 vs 0.98765 - same; file ~10-30% bigger).
+- Intel Quick Sync was tested (30 s vs 33 s per part) but scores slightly lower and is Intel-only: not used.
+- FilmCraft graphics convert 4 at a time.
+- Cut: slowly spoken words (> 0.6 s) keep at least 0.4 s; they were sometimes removed whole as "silence".
+
+## 1.9.0 - 2026-11-27
+- One edit page for everything: the style gallery, describe-your-own, length, extras and "how to finish"
+  (done for me / + touch up in FilmCraft) are chosen on the live page; Claude picks the choice up from choice.json
+  (written by live.py, POST protected by a per-launch page token, local only). The same page then shows the edit live
+  and, side by side, FilmCraft's progress with pictures of its window; "Open in FilmCraft" button after any edit.
+
+## 1.8.0 - 2026-11-27
+- Optional "Open in FilmCraft": `scripts/filmcraft_open.py` builds the finished edit live on FilmCraft's timeline
+  (FilmCraft 0.20.1, free, MIT or Apache-2.0) through its documented control channel with a one-time token: kept parts
+  of the original, page matte + cards, stickers at their positions, captions, music at our level. Graphics are
+  converted to ProRes 4444 (FilmCraft has no qtrle decoder); phone rotation is handled when scaling the footage.
+- `install.ps1 -WithFilmCraft`: downloads the portable build from the official release, checks SHA-256, unzips to
+  tools/filmcraft (ignored by git) and records it in ~/.pro-video-editor/filmcraft.json.
+
 ## 1.7.0 - 2026-11-27
 - Live edit page: `scripts/live.py` serves `templates/live.html` on 127.0.0.1 and the skill opens it in the browser pane
   right after upload. The user watches each step as it happens (listening %, what was cut, style, graphics n of m with
