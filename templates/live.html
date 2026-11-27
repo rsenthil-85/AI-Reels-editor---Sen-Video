@@ -30,7 +30,7 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
 .words span{cursor:pointer}
 .notes{font-size:12px;color:var(--mute);max-height:120px;overflow:auto}
 .choose h3{font-size:14px;margin:14px 0 8px;font-weight:700}.choose h3:first-child{margin-top:0}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
 .tile{border:2px solid var(--line);border-radius:12px;padding:8px;cursor:pointer;background:#fff;text-align:left;font:inherit;color:inherit}
 .tile:hover{border-color:#C9C5BB}.tile.on{border-color:var(--acc);background:#F3F7FF}
 .tile img{width:100%;border-radius:8px;display:block;background:#eee}.tile b{display:block;margin-top:6px;font-size:13px}.tile span{font-size:11px;color:var(--mute)}
@@ -82,7 +82,7 @@ function chooseUI(){
  const rec=S.intake?.recommended||{}; pick.style=pick.style||rec.style||'mixed';   // keep what the user already clicked
  if(!pick.extras)pick.extras=['music'].concat((rec.extras||[]).includes('zooms')?['zooms']:[]).concat(['stickers']);
  const ord=['studio','mixed','simple'].filter(k=>S.styles[k]);
- $('tiles').innerHTML=ord.map(k=>`<button type="button" class="tile" data-k="${k}"><img src="/assets/gallery/style_${k}.jpg" alt=""><b>${esc(S.styles[k].label)}${k===rec.style?' (recommended)':''}</b><span>${esc(S.styles[k].tagline)}</span></button>`).join('')
+ $('tiles').innerHTML=ord.map(k=>`<button type="button" class="tile" data-k="${k}"><img src="/assets/gallery/storyboard_${k}.jpg" onerror="this.onerror=null;this.src='/assets/gallery/style_${k}.jpg'" alt=""><b>${esc(S.styles[k].label)}${k===rec.style?' (recommended)':''}</b><span>${esc(S.styles[k].tagline)}</span></button>`).join('')
   +`<div class="tile" data-k="describe"><b>Describe your own</b><span>Tell me the look you want, or paste a link to a reel you like</span><textarea id="desc" placeholder="e.g. yellow pill captions, no music, fast cuts"></textarea></div>`;
  document.querySelectorAll('.tile').forEach(t=>t.onclick=e=>{pick.style=t.dataset.k;paint()});
  $('desc').oninput=e=>{pick.describe=e.target.value;pick.style='describe';paint()};

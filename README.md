@@ -9,7 +9,11 @@ FilmCraft, a free video editor.
 Everything heavy runs on your own computer with free, open-source tools. No API keys, no ChatGPT, no paid
 services. Claude Code (your normal Claude plan) is the part that reads your transcript and decides the edit.
 
-![The three editing styles](assets/gallery/styles.jpg)
+![Bold B-roll: hook band, talking with stacked words, a big number per point, glowing comment call-to-action, end card](assets/gallery/storyboard_studio.jpg)
+
+![Clean cards: title card, card above a rounded face window, full card, sticker, recap checklist](assets/gallery/storyboard_mixed.jpg)
+
+![Face and captions: title, big captions, zoom-in, sticker, number card](assets/gallery/storyboard_simple.jpg)
 
 ## Contents
 
@@ -102,12 +106,15 @@ The page also shows the cut video, then the finished one, and your transcript wi
 | **Face and captions** | Your face the whole time, zoom-ins, word-highlight captions, a title and a few cards | Opinions and stories; fastest |
 | **Describe your own** | Claude picks the nearest style and applies what you wrote (or studies a reel you link) | Anything else |
 
+The storyboards at the top of this page show each style from start to finish, and the edit page uses the same
+pictures in its style picker. The presenter in them is AI-generated, not a real person.
+
 Colour looks for Clean cards and Face and captions:
 
 ![Colour looks](assets/gallery/looks.jpg)
 
-The gallery pictures use an illustrated presenter drawn in code (no real person). They are rebuilt with
-`scripts/make_gallery.py` whenever a template changes, so they always match what the skill makes.
+If a storyboard is missing, the picker falls back to the illustrated gallery made by `scripts/make_gallery.py`
+(a presenter drawn in code, rebuilt whenever a template changes).
 
 ## Methods: what happens at each step
 
