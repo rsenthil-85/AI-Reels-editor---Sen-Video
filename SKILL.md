@@ -12,7 +12,7 @@ description: >-
 
 # pro-video-editor
 
-Version 1.6.0 - see CHANGELOG.md. How it works, what was measured and why: `references/engineering-notes.md`
+Version 1.7.0 - see CHANGELOG.md. How it works, what was measured and why: `references/engineering-notes.md`
 (read it before changing the pipeline). Recording advice for users: `references/recording-guide.md`.
 
 Every video goes: **gallery + style question (instant, analysis runs behind it) -> short brief -> edit -> stills -> final**.
@@ -27,12 +27,28 @@ disable or work around Windows security prompts.
 2. Show the styles as PICTURES, not just words (users do not understand style names alone). If an inline visual
    tool is available (show_widget), use ONE visual form: style options as tiles with a small SVG mock-up of each
    reel (A: dark title band + lime number + phone; B: card above a rounded face window; C: face + highlighted caption),
-   plus length and extras pills on the same form. The question dialog (AskUserQuestion) hides the chat, so never rely
+   plus length and extras pills on the same form. Add a 4th tile **Describe your own** with a text box
+   ("tell me the look you want, or paste a link to a reel you like"). The question dialog (AskUserQuestion) hides the chat, so never rely
    on an image sent just before it. Otherwise send (made once by `scripts/make_gallery.py`, an illustrated presenter,
    no real person) and ask the style question (section 2). The user picks while the video is transcribed and cut.
 3. Then the rest of the brief; for Clean cards / Face and captions send `assets/gallery/looks.jpg` with the Look question.
    Offer "see the looks on my own footage" only if they ask (`looks_preview.py`, ~10-60 s after the analysis).
 If a template or style changes, re-run `PY S/make_gallery.py` (about 5 s) so the gallery matches what the skill makes.
+
+## Live edit page (on by default): the user watches the edit happen
+
+Right after the video arrives, start the page and open it on the right, before asking anything:
+```
+PY S/live.py <video> --port 8765          (Bash, run_in_background - local only, read-only, stdlib)
+```
+then open `http://127.0.0.1:8765/` in the browser pane (preview_start with that url; if the first navigation is
+refused, navigate again once the server has printed its line), then make sure the user can SEE it: the pane is
+often hidden - check tabs_context and show it (show_pane "preview"); a page in a hidden pane is invisible to them. Any browser works too. The page polls
+`<name>_edit/live.json` (written by scripts/livelog.py from autoedit, transcribe and compose) and shows: the steps
+with live details (heard 40% of your video / 78 s down to 55 s / 9 of 15 graphics / rendering 63%), the cut video
+(then the finished one), a clickable timeline (original kept vs cut, cards, stickers, captions, zoom-ins, music),
+each graphic the moment it is rendered, and the transcript with the cut words struck out. Tell the user in one line
+that it is open. If port 8765 is busy use another. Stop the server task when the job is delivered.
 
 ## 1. Analyse (runs in the background from step 0)
 
@@ -88,6 +104,12 @@ look paper|highlight|navy|mint, captions karaoke|pill|minimal|duo|stack|none (le
 transitions|music|effects|broll, music_mood. Keep "music" in extras unless they said no music.
 
 ## 3. Edit
+
+**Described style** (the user wrote their own instead of picking a tile): choose the nearest style in
+`styles/edit_styles.json` as the base (`style` in answers.json), then apply what they asked on top in plan.json:
+caption_style (pill/bold/minimal/duo/stack), accent and theme, grade (true/"warm"), music mood, layout pieces
+(full cards, inset window, B-roll + bignum, stickers), pace. A link to a reel: study it first with learn_style.py.
+Say back in one line what you understood ("Bold B-roll base, yellow pill captions, no music") before rendering.
 
 ```
 PY S/autoedit.py <video> --answers <name>_edit/answers.json --no-render

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live edit</title>
+<style>
+@font-face{font-family:Pop;src:url(/assets/fonts/Poppins-Medium.ttf);font-weight:500}
+@font-face{font-family:Pop;src:url(/assets/fonts/Poppins-Bold.ttf);font-weight:700}
+:root{--bg:#F4F2EC;--card:#fff;--ink:#16181D;--mute:#6B6F78;--line:#E3E1DA;--acc:#2F6FED;--hl:#FFE45C;--ok:#16A34A;--cut:#D9D6CE}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:500 14px/1.5 Pop,system-ui,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}h1{font-size:20px;margin:0;font-weight:700}
+.sub{color:var(--mute);font-size:13px}.pill{background:var(--hl);border-radius:99px;padding:2px 10px;font-size:12px;font-weight:700}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0 14px}.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .6s}
+.grid{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:14px}@media(max-width:700px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.card h2{font-size:13px;margin:0 0 8px;color:var(--mute);font-weight:500}
+video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:block}
+.vlabel{font-size:12px;color:var(--mute);margin-top:6px}
+.steps{list-style:none;margin:0;padding:0}.steps li{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}.steps li:last-child{border:0}
+.dot{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;margin-top:1px}
+.doing .dot{border-color:var(--acc);border-top-color:transparent;animation:spin 1s linear infinite}.done .dot{background:var(--ok);border-color:var(--ok)}
+@keyframes spin{to{transform:rotate(360deg)}}.steps b{display:block;font-weight:700;font-size:13px}.steps span{color:var(--mute);font-size:12px}.todo b{color:var(--mute)}
+.tl{position:relative;margin-top:6px}.track{display:flex;align-items:center;gap:8px;margin:5px 0}.track label{flex:none;width:82px;font-size:11px;color:var(--mute)}
+.lane{position:relative;flex:1;height:22px;background:#FAF9F6;border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer}
+.blk{position:absolute;top:2px;bottom:2px;border-radius:4px;font-size:10px;color:#fff;padding:0 4px;white-space:nowrap;overflow:hidden;line-height:16px}
+.ph{position:absolute;top:0;bottom:0;width:2px;background:#E5484D;pointer-events:none}
+.gfx{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}.gfx .sub{grid-column:1/-1}.gfx figure{margin:0;font-size:10px;color:var(--mute);text-align:center}
+.gfx img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#F4F2EC;object-fit:contain;animation:pop .35s ease}
+@keyframes pop{from{transform:scale(.85);opacity:0}}
+.words{font-size:13px;line-height:1.9;max-height:220px;overflow:auto}.words s{color:#B0ADA5;text-decoration-color:#E5484D}.words .now{background:var(--hl);border-radius:4px}
+.words span{cursor:pointer}
+.notes{font-size:12px;color:var(--mute);max-height:120px;overflow:auto}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mute);margin-top:4px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+</style></head><body><div class="wrap">
+<header><h1>Live edit</h1><span class="sub" id="vname"></span><span class="pill" id="style" hidden></span><span class="sub" id="clock"></span></header>
+<div class="bar"><i id="overall"></i></div>
+<div class="grid">
+ <div class="card"><h2>What it is doing</h2><ul class="steps" id="steps"></ul></div>
+ <div class="card"><h2 id="vtitle">Your video</h2><video id="v" controls playsinline preload="metadata"></video><div class="vlabel" id="vlabel"></div></div>
+</div>
+<div class="card" style="margin-top:14px"><h2>Timeline (click to jump)</h2><div class="tl" id="tl"></div>
+ <div class="legend"><span><i style="background:var(--ok)"></i>kept</span><span><i style="background:var(--cut)"></i>cut out</span><span><i style="background:#2F6FED"></i>full card</span><span><i style="background:#7C3AED"></i>top panel</span><span><i style="background:#E8603C"></i>sticker / overlay</span><span><i style="background:#F2C524"></i>zoom-in</span></div></div>
+<div class="card" style="margin-top:14px"><h2 id="gtitle">Graphics</h2><div class="gfx" id="gfx"></div></div>
+<div class="card" style="margin-top:14px"><h2>What you said (struck out = cut)</h2><div class="words" id="words"></div></div>
+<div class="card" style="margin-top:14px"><h2>Log</h2><div class="notes" id="notes"></div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let S={}, WD={}, curSrc='', wordsKey='', shown=new Set();
+const fmt=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+async function poll(){
+ try{S=await (await fetch('/api/state',{cache:'no-store'})).json()}catch(e){setTimeout(poll,1500);return}
+ $('vname').textContent=S.video||''; if(S.style){$('style').hidden=false;$('style').textContent=S.style}
+ if(S.start)$('clock').textContent=(S.steps&&S.steps.done&&S.steps.done.state==='done'?'finished in ':'')+fmt(((S.steps?.done?.t1)||Date.now()/1000)-S.start);
+ steps(); video(); timeline();
+ const k=JSON.stringify([S.steps?.cut?.state,S.has_cut_mp4,S.plan&&S.plan.fix]); if(k!==wordsKey){wordsKey=k;loadWords()}
+ graphics(); notes();
+ setTimeout(poll,1000);
+}
+function steps(){
+ const o=S.order||[], st=S.steps||{}; let done=0;
+ $('steps').innerHTML=o.map(k=>{const s=st[k]||{};if(s.state==='done')done++;
+  let d=s.detail||''; if(k==='render'&&s.state==='doing'&&S.progress)d+=' - '+Math.round(S.progress.video*100)+'%';
+  return `<li class="${s.state||'todo'}"><div class="dot">${s.state==='done'?'&#10003;':''}</div><div><b>${esc(s.label||k)}</b><span>${esc(d)}</span></div></li>`}).join('');
+ let f=done/Math.max(1,o.length); if(st.render?.state==='doing')f+=(S.progress?.video||0)/o.length; $('overall').style.width=(f*100)+'%';
+}
+function video(){
+ const fin=S.steps?.done?.state==='done'&&S.out, src=fin?'/file?f='+encodeURIComponent(S.out):S.has_cut_mp4?'/e/cut.mp4':'';
+ if(src&&src!==curSrc){const t=$('v').currentTime;curSrc=src;$('v').src=src;$('v').currentTime=fin?0:t;}
+ $('vtitle').textContent=fin?'Finished video':S.has_cut_mp4?'Cut version (pauses and retakes removed)':'Your video';
+ $('vlabel').textContent=fin?'This is the final file: '+S.out:S.has_cut_mp4?'Graphics, captions and music are added in the final render.':'Waiting for the cut...';
+}
+function lane(label,dur,blocks){
+ return `<div class="track"><label>${label}</label><div class="lane" data-dur="${dur}">${blocks.map(b=>`<div class="blk" title="${esc(b.t||'')}" style="left:${b.a/dur*100}%;width:${Math.max(.4,(b.b-b.a)/dur*100)}%;background:${b.c}">${esc(b.t||'')}</div>`).join('')}<div class="ph"></div></div></div>`;
+}
+let tlKey='';
+function timeline(){
+ const P=S.plan||{}, D=S.cut_seconds||S.intake?.cut_seconds||0, segs=WD.segments||[], OD=S.duration||0;
+ const key=JSON.stringify([P.inserts,P.overlays,P.punch,segs.length,D,OD,(WD.words_cut||[]).length]); if(key===tlKey){ph();return} tlKey=key;
+ let h='';
+ if(OD&&segs.length){const b=[{a:0,b:OD,c:'var(--cut)'}].concat(segs.map(s=>({a:s.s,b:s.e,c:'var(--ok)'})));h+=lane('Original',OD,b)}
+ if(D){
+  const ins=(P.inserts||[]).map(i=>({a:i.t0,b:i.t1,c:(i.mode||'top')==='top'?'#7C3AED':'#2F6FED',t:(i.gfx?.type||'clip')+(i.gfx?.head?' '+i.gfx.head:i.gfx?.l1?' '+i.gfx.l1:'')}));
+  h+=lane('Cards',D,ins);
+  h+=lane('Stickers',D,(P.overlays||[]).map(o=>({a:o.t,b:o.t+(o.dur||1),c:'#E8603C',t:o.gfx?.label||o.gfx?.type||o.pfx||''})));
+  if(Array.isArray(P.punch))h+=lane('Zoom-ins',D,P.punch.map(p=>({a:p.t0,b:p.t1,c:'#F2C524'})));
+  const w=WD.words_cut||[]; if(w.length)h+=lane('Captions',D,w.map(x=>({a:x.s,b:x.e,c:'#9AA3B2'})));
+  if(P.music)h+=lane('Music',D,[{a:0,b:D,c:'#16A34A',t:String(P.music).replace('auto:','')+' bed'}]);
+ }
+ $('tl').innerHTML=h||'<span class="sub">The timeline appears once the video is cut.</span>';
+ document.querySelectorAll('.lane').forEach(l=>l.onclick=e=>{const r=l.getBoundingClientRect(),d=+l.dataset.dur,t=(e.clientX-r.left)/r.width*d;
+  const orig=l.previousElementSibling?.textContent==='Original'; $('v').currentTime=orig?toCut(t):t; $('v').play()}); ph();
+}
+function toCut(t){let acc=0;for(const s of (WD.segments||[])){if(t<s.s)return acc;if(t<=s.e)return acc+t-s.s;acc+=s.e-s.s}return acc}
+function ph(){const t=$('v').currentTime||0;document.querySelectorAll('.lane').forEach(l=>{const d=+l.dataset.dur;const orig=l.previousElementSibling?.textContent==='Original';
+ let x=t; if(orig){let acc=0;for(const s of (WD.segments||[])){if(t<=acc+(s.e-s.s)){x=s.s+(t-acc);break}acc+=s.e-s.s}} l.querySelector('.ph').style.left=(x/d*100)+'%'})}
+$('v').ontimeupdate=()=>{ph();const t=$('v').currentTime;document.querySelectorAll('.words span[data-c]').forEach(e=>e.classList.toggle('now',+e.dataset.c<=t&&t<+e.dataset.e))};
+async function loadWords(){
+ try{WD=await (await fetch('/api/words',{cache:'no-store'})).json()}catch(e){return}
+ const w=WD.words||[], segs=WD.segments||[]; if(!w.length){$('words').innerHTML='<span class="sub">Listening...</span>';return}
+ const FX=(S.plan&&S.plan.fix)||{}, fw=w=>{const c=w.replace(/[^\w$]/g,'');return FX[c]?w.replace(c,FX[c]):w};
+ const kept=x=>!segs.length||segs.some(s=>x.s>=s.s-.05&&x.e<=s.e+.05);
+ $('words').innerHTML=w.map(x=>{if(!kept(x))return `<s>${esc(fw(x.w))}</s>`;const c=toCut(x.s);return `<span data-c="${c.toFixed(2)}" data-e="${(c+x.e-x.s).toFixed(2)}">${esc(fw(x.w))}</span>`}).join(' ');
+ document.querySelectorAll('.words span[data-c]').forEach(e=>e.onclick=()=>{$('v').currentTime=+e.dataset.c;$('v').play()});
+ tlKey='';
+}
+function graphics(){
+ const P=S.plan||{}, wd=(S.edit_dir||'')+'\\work_compose\\'; const items=[];
+ (P.inserts||[]).forEach((i,k)=>{if(i.gfx)items.push({f:wd+'ins'+k+'.mov',t:i.gfx.type+(i.gfx.head?': '+i.gfx.head:i.gfx.l1?': '+i.gfx.l1:'')})});
+ (P.overlays||[]).forEach((o,k)=>{if(o.gfx&&o.gfx.type!=='wipe')items.push({f:wd+'ov'+k+'.mov',t:o.gfx.label||o.gfx.type})});
+ const gs=S.steps?.graphics; $('gtitle').textContent='Graphics'+(gs?.detail?' - '+gs.detail:'');
+ if(gs?.state==='todo'||!gs){if(!items.length)$('gfx').innerHTML='<span class="sub">Graphics are added after you pick a style.</span>';else if(!$('gfx').children.length)$('gfx').innerHTML=''}
+ for(const it of items){if(shown.has(it.f))continue;const img=new Image();img.onload=()=>{if(shown.has(it.f))return;shown.add(it.f);
+   const fg=document.createElement('figure');fg.innerHTML=`<img src="${img.src}"><figcaption>${esc(it.t)}</figcaption>`;$('gfx').appendChild(fg)};
+  img.src='/thumb?t=60%25&f='+encodeURIComponent(it.f)+'&v='+(gs?.detail||'')}
+}
+function notes(){const n=S.notes||[];$('notes').innerHTML=n.slice(-12).reverse().map(x=>`<div>${fmt(x.t)}  ${esc(x.text)}</div>`).join('')}
+poll();
+</script></body></html>

@@ -52,7 +52,7 @@ def group(words, max_words=3, max_chars=16):
             out.append(cur); cur = []
     return out
 
-def build(words, W, H, y=0.66, fs=70, max_words=3, acc="#E8603C", split=(), seam=None, emph=(), style="pill", cards=(), ink="#16181D"):
+def build(words, W, H, y=0.66, fs=70, max_words=3, acc="#E8603C", split=(), seam=None, emph=(), style="pill", cards=(), ink="#16181D", light_split=False):
     """style: pill | bold (white caps, black outline, active word in accent) | minimal (sentence case, soft shadow)
     | duo (style refs: small plain words + the key phrase on its own line in big italic serif, accent colour).
     cards: windows with a full-screen card on screen - captions move low (y 0.86) and use dark `ink` text."""
@@ -110,8 +110,9 @@ def build(words, W, H, y=0.66, fs=70, max_words=3, acc="#E8603C", split=(), seam
                     small, key = "", " ".join(raw)
                 else:
                     small, key = " ".join(raw), ""
-                c_small = ass_color(ink) if oncard else "&H00FFFFFF&"
-                sh = r"\shad0\bord0" if oncard else ""
+                dark = oncard or (insplit and light_split)   # light canvas behind (card, or the inset window page): dark small words
+                c_small = ass_color(ink) if dark else "&H00FFFFFF&"
+                sh = r"\shad0\bord0" if dark else ""
                 fade = r"\fad(90,0)" if pi == 0 else ""
                 txt = ("{" + rf"\fs{round(size * 0.85)}\1c{c_small}" + "}" + small) if small else ""
                 if key:   # the key phrase is the big line (style refs: ~2x the small words)

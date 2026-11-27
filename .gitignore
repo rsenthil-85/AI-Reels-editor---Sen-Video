@@ -13,8 +13,25 @@ assets/rnnoise/*.rnnn
 # frames and audio taken from other creators' videos while studying them (study only, not ours to share)
 references/refs/
 
-# renders and scratch
+# NEVER push the user's own videos, test footage, renders or edit folders - only the skill itself
 *.mp4
 *.mov
+*.m4v
+*.mkv
+*.avi
+*.webm
+*.3gp
 *.wav
+*.mp3
+*.m4a
+*.aac
+*.srt
+*.ass
+*_edit/
+work_compose/
+live.json
+live_thumbs/
+snapshots/
+*.zip
+# (the skill's own synthesised sound effects are the one media exception)
 !assets/sfx/*.wav

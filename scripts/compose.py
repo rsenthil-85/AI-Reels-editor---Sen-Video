@@ -33,6 +33,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import captions as CAP
+import livelog as LL
 
 IMG = (".png", ".jpg", ".jpeg", ".webp")
 
@@ -63,6 +64,9 @@ def key_colour(src):
         px += [a[: int(h * .12)].reshape(-1, 3), a[:, : int(w * .08)].reshape(-1, 3), a[:, -int(w * .08):].reshape(-1, 3)]
     m = np.median(np.concatenate(px), axis=0)
     return "#%02X%02X%02X" % tuple(int(v) for v in m)
+
+def _light(hexc):
+    h = hexc.lstrip("#"); r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4)); return 0.299 * r + 0.587 * g + 0.114 * b > 150
 
 def cover(w, h):  # scale to cover then crop centre
     return f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h}"
@@ -182,7 +186,14 @@ def main():
                   "template": j[0][11], "opaque": j[0][11] == "motionbg.html" or json.loads(j[0][3]).get("type") in ("device", "endcard"),
                   "fps": int(json.loads(j[0][3]).get("fps", 30))} for j in jobs]
         bj = os.path.join(work, "gfx_jobs.json"); json.dump(batch, open(bj, "w"))
-        subprocess.run(["node", os.path.join(HERE, "render_gfx.mjs"), "--batch", bj, "--workers", "3"], check=True, stdout=subprocess.DEVNULL)
+        LL.step(base, "graphics", "doing", f"0 of {len(jobs)} graphics", gfx_total=len(jobs))
+        pr = subprocess.Popen(["node", os.path.join(HERE, "render_gfx.mjs"), "--batch", bj, "--workers", "3"], stdout=subprocess.PIPE, text=True)
+        ndone = 0
+        for line in pr.stdout:   # one line per finished graphic -> live page shows it straight away
+            if line.strip():
+                ndone += 1; LL.step(base, "graphics", "doing", f"{ndone} of {len(jobs)} graphics")
+                LL.note(base, "graphic ready", last_gfx=line.strip())
+        if pr.wait() != 0: raise subprocess.CalledProcessError(pr.returncode, "render_gfx")
         for j in jobs: open(j[1], "w").write(j[2])
         print(f"  rendered {len(jobs)} graphics in {_t.time() - t0:.0f}s")
 
@@ -339,7 +350,8 @@ def main():
                 open(ass, "w", encoding="utf-8").write(CAP.build(words, W, H, P.get("caption_y", 0.66 if reel else 0.84), P.get("caption_fs", 70 if reel else 54),
                                                                  3, P.get("accent", "#E8603C"), top_win, TOP_H if reel else None, set(P.get("emph", [])),
                                                                  P.get("caption_style", "pill"), [(c["t0"], c["t1"]) for c in cards + [x for x in inserts if x.get("mode") == "full" and x.get("gfx", {}).get("type") in ("device", "checklist", "counter", "diagram")]],
-                                                                 P.get("ink", "#16181D")))
+                                                                 P.get("ink", "#16181D"),
+                                                                 light_split=bool(inset and _light(P.get("panel_base", "#F4F2EC")))))
                 f.append(f"[{cur}]subtitles=captions_{tag}.ass:fontsdir=fonts[vc]"); cur = "vc"
             if mode == "video": f.append(f"[{cur}]trim=start={S:.3f}:end={E:.3f},setpts=PTS-STARTPTS[vout]")
             elif preview: f.append(f"[{cur}]scale=-2:{540 if reel else 360}[vout]")
@@ -410,7 +422,7 @@ def main():
         else:
             tail_args = ["-map", "[vout]", "-map", "[aout]"] + x264 + ["-threads", "0", "-c:a", "aac", "-b:a", "192k",
                          "-movflags", "+faststart", "-t", f"{dur:.3f}", out_path]
-        args += ["-/filter_complex", os.path.basename(script)] + tail_args
+        args += ["-/filter_complex", os.path.basename(script), "-progress", f"prog_{tag}.txt", "-stats_period", "1"] + tail_args
         for attempt in range(3):   # ffmpeg can crash (access violation) when several big jobs run at once: retry
             r = subprocess.run(args, cwd=work)
             if r.returncode == 0: break
@@ -421,6 +433,11 @@ def main():
     out = rp(P.get("out", "final.mp4"))
     if preview: out = re.sub(r"\.mp4$", "_preview.mp4", out)
     import time as _t; t0 = _t.time()
+    if not any(j for j in jobs): LL.step(base, "graphics", "done", "graphics already made (reused)")
+    else: LL.step(base, "graphics", "done", f"{len(jobs)} graphics made")
+    for pf in [x for x in os.listdir(work) if x.startswith("prog_")]: os.remove(os.path.join(work, pf))
+    LL.step(base, "render", "doing", "rendering", render_dur=dur, out=out)
+    LL.step(base, "audio", "doing", "clean voice, music, sound effects")
     nseg = int(P.get("segments", 0) or (0 if (preview or "--single" in a or dur < 20) else min(4, max(2, (os.cpu_count() or 4) // 2))))
     if nseg < 2:
         render("all", out_path=out)
@@ -438,6 +455,8 @@ def main():
         subprocess.run(["ffmpeg", "-nostdin", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", "segments.txt", "-i", "mix.m4a",
                         "-map", "0:v", "-map", "1:a", "-c", "copy", "-movflags", "+faststart", "-t", f"{dur:.3f}", out], check=True, cwd=work)
     print(f"  -> {out}  ({_t.time() - t0:.0f}s, {max(nseg, 1)} part{'s' if nseg > 1 else ''})")
+    LL.step(base, "render", "done", f"{max(nseg, 1)} parts joined in {_t.time() - t0:.0f} s"); LL.step(base, "audio", "done", "-14 LUFS master")
+    LL.step(base, "done", "done", os.path.basename(out), out=out)
 
 if __name__ == "__main__":
     main()

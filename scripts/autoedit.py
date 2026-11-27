@@ -60,13 +60,19 @@ def main():
     W = lambda f: os.path.join(work, f)
     presets = load(os.path.join(ROOT, "styles", "presets.json")); themes = load(os.path.join(ROOT, "styles", "themes.json"))
 
+    sys.path.insert(0, HERE); import livelog as LL
+    if "--analyze" in a: LL.reset(work, video=os.path.basename(src), src=src)
     # ---- phase 1: transcribe, analyse, cut (all cached)
+    LL.step(work, "analyse", "doing", "turning your speech into words")
     if not os.path.exists(W("words.json")):
         run([PY, os.path.join(HERE, "transcribe.py"), src, work, "--model", g("--model", "small"), "--lang", g("--lang", "en")])
     if not os.path.exists(W("analysis.json")) or "--analyze" in a:
         run([PY, os.path.join(HERE, "analyze.py"), src, work, "--words", W("words.json")])
     an = load(W("analysis.json"))
     speech = (an.get("speech_share") or 0) >= 0.2
+    nw = len(load(W("words.json"))) if os.path.exists(W("words.json")) else 0
+    LL.step(work, "analyse", "done", f"{nw} words heard, {an['duration']:.0f} s video", duration=an["duration"])
+    LL.step(work, "cut", "doing", "finding pauses, umms and repeated lines")
     if speech and (not os.path.exists(W("cut.mp4")) or g("--drop") is not None):
         cut = [PY, os.path.join(HERE, "cut.py"), src, W("words.json"), work]
         if g("--drop"): cut += ["--drop", g("--drop")]
@@ -80,6 +86,12 @@ def main():
               "themes": {k: {"label": v["label"], "looks_like": v["looks_like"], "note": v["note"]} for k, v in themes.items()},
               "styles": {k: {"label": v["label"], "question": v["question"], "uses_look": v["uses_look"]} for k, v in STYLES.items()}}
     json.dump(intake, open(W("intake.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+    if speech:
+        segs = load(W("segments.json")) if os.path.exists(W("segments.json")) else []
+        LL.step(work, "cut", "done", f"{an['duration']:.0f} s down to {intake['cut_seconds']:.0f} s ({max(0, len(segs) - 1)} gaps removed)",
+                cut_seconds=intake["cut_seconds"])
+    else: LL.step(work, "cut", "done", "no speech, nothing to cut")
+    if "--analyze" in a: LL.step(work, "style", "doing", "waiting for your style choice")
     if "--analyze" in a:
         # auto face framing: start it now in the background; it finishes while the user answers the questions
         if not os.path.exists(W("face.json")) or g("--drop") is not None:
@@ -150,6 +162,8 @@ def main():
     if os.path.exists(W("plan.json")) and "--fresh-plan" not in a:
         old = load(W("plan.json")); plan["inserts"], plan["overlays"] = old.get("inserts", []), old.get("overlays", [])
     json.dump(plan, open(W("plan.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+    LL.step(work, "style", "done", f"{sty['label']}, {plan['caption_style']} captions" + (", music" if plan.get("music") else ""),
+            style=sty["label"])
     if ans.get("save_profile", True):
         os.makedirs(os.path.dirname(PROFILE), exist_ok=True)
         json.dump({k: ans[k] for k in ("style", "format", "look", "captions", "extras", "music_mood") if k in ans}, open(PROFILE, "w"), indent=1)

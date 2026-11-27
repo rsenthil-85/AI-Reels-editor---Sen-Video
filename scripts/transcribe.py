@@ -40,6 +40,9 @@ def main():
         words += ws
         if ws: cues.append((ws[0]["s"], ws[-1]["e"], " ".join(x["w"] for x in ws)))
         print(f"\r  {sg.end:7.1f}s / {info.duration:.0f}s", end="", flush=True)
+        try:   # live edit page (live.py): show how far the listening is
+            import livelog; livelog.step(out, "analyse", "doing", f"heard {sg.end / max(info.duration, 1):.0%} of your video")
+        except Exception: pass
     print()
     # second pass: a word stretched over > 0.7 s usually hides a repeat or restart Whisper tidied away.
     # Re-transcribe just those few seconds word-for-word and splice the result in when it finds more words.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0 - 2026-11-27
+- Live edit page: `scripts/live.py` serves `templates/live.html` on 127.0.0.1 and the skill opens it in the browser pane
+  right after upload. The user watches each step as it happens (listening %, what was cut, style, graphics n of m with
+  a preview of each graphic as it lands, render % from ffmpeg progress, finished video), a clickable timeline and the
+  transcript with cut words struck out. Progress comes from `scripts/livelog.py` (autoedit, transcribe, compose).
+- "Describe your own" style: free text (or a reel link) mapped onto the nearest style plus overrides.
+
 ## 1.6.0 - 2026-11-27
 - Instant style gallery: `assets/gallery/styles.jpg` (3 styles x 3 frames) and `looks.jpg` (4 colour looks), drawn
   with an illustrated presenter (new gfx type `presenter`, no real person). Shown the moment a video arrives, with the
