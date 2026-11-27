@@ -164,14 +164,19 @@ was not verified. End with **ship it, or change it?**
   write the findings into references/style-refs.md, then build what is missing.
 
 ## AI News style (news) - how to build it
-Needs screenshots (choice.json `materials`: file paths or a folder). Your face full frame with
+Needs screenshots (choice.json `materials`: uploaded on the page into `<name>_edit/materials/`, file paths, a folder, or
+links to screenshot with the headless browser). Your face full frame with
 `{"type":"badge","text":"New"}` for 2-3 s, then for each screenshot an insert `mode: bubble` with
 `{"type":"shot","img":"<path>","focus":"x,y,w,h"}` (the key line as fractions of the image: LOOK at the screenshot to
 find it; `tz` = when the zoom starts) for as long as the speaker talks about it; opinion on the face; comment card.
 The bubble is cropped around the face (auto face framing). Green screen: add the swap, it also shows in the bubble.
 
 ## Screen tutorial style (tutorial) - how to build it
-Needs a screen recording (choice.json `materials`). Run
+Screen recording is optional (choice.json `materials`: a file uploaded on the page, saved in `<name>_edit/materials/`,
+a pasted file path, or a video link). A link: download it with `PY -m yt_dlp -o "<name>_edit/materials/screen.%(ext)s" <url>`
+(the user's own video; say so if the site refuses). Nothing given: build the screen with graphics instead - inserts
+`mode: bubble` with `{"type":"device","kind":"laptop", "head":..., "rows":..., "cursor":1}` and `{"type":"prompt"}` (types
+the prompt the speaker reads out) at each step, same badges. With a recording, run
 `PY S/screen_zoom.py <screen.mp4> <name>_edit/screen_vertical.mp4 --top 0.04 --area 0.58` (finds clicks / typing by
 comparing frames, holds a zoom on that area; ~10 s for 20 s), then an insert `mode: bubble` with
 `"src": "screen_vertical.mp4"` and `"ss"` to line it up with what is said. Badges

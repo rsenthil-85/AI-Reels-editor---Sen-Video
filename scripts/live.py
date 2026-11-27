@@ -101,6 +101,23 @@ class H(BaseHTTPRequestHandler):
         """The page's two actions. Only from the page itself: it carries a per-launch token that other web pages can't read."""
         path = urlparse(self.path).path
         if self.headers.get("X-Page-Token") != PAGE_TOKEN: return self.send_error(403)
+        if path == "/api/upload":   # a file from the user's computer (screen recording, screenshots) -> <edit>/materials/
+            from urllib.parse import unquote as _uq
+            name = re.sub(r"[^\w.\- ]+", "_", os.path.basename(_uq(self.headers.get("X-Filename") or "upload")))[:120] or "upload"
+            if os.path.splitext(name)[1].lower() not in (".mp4", ".mov", ".m4v", ".mkv", ".webm", ".avi", ".png", ".jpg", ".jpeg", ".webp"):
+                return self.send_json({"ok": False, "error": "use a video (mp4, mov, webm...) or an image (png, jpg, webp)"})
+            size = int(self.headers.get("Content-Length") or 0)
+            if size <= 0 or size > 4 * 1024 ** 3: return self.send_json({"ok": False, "error": "file is empty or over 4 GB"})
+            md = os.path.join(ED, "materials"); os.makedirs(md, exist_ok=True)
+            dest = os.path.join(md, name); left = size
+            with open(dest, "wb") as fo:
+                while left > 0:
+                    chunk = self.rfile.read(min(1 << 20, left))
+                    if not chunk: break
+                    fo.write(chunk); left -= len(chunk)
+            if left: os.remove(dest); return self.send_json({"ok": False, "error": "upload was interrupted"})
+            LL.note(ED, f"file received: {name} ({size / 1e6:.1f} MB)")
+            return self.send_json({"ok": True, "path": dest, "name": name})
         try: body = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length") or 0), 20000)) or b"{}")
         except Exception: return self.send_error(400)
         if path == "/api/choose":   # style / length / extras / finish - Claude (watching choice.json) takes it from here

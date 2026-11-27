@@ -53,14 +53,14 @@
  "tutorial": {
   "label": "Screen tutorial",
   "tagline": "Your screen recording zooms to each click, your face in a bubble",
-  "question": "Your screen recording fills the screen and zooms to wherever you click or type, your face in a bubble in the corner, step badges and the prompt you typed shown clearly. Face full screen for the intro and the result.",
+  "question": "Your screen recording fills the screen and zooms to wherever you click or type, your face in a bubble in the corner, step badges and the prompt you typed shown clearly. Face full screen for the intro and the result. No recording? The screen is built with graphics: an app mock-up that types the prompt and clicks.",
   "learned_from": "AI tool tutorial format (FocuSee / Tella / Trupeer style auto-zoom; research 2026-11-28)",
   "layout": "tutorial",
   "caption": "minimal",
   "grade": true,
   "transitions": false,
   "uses_look": true,
-  "needs": "screen_recording",
+  "needs": "screen_recording (optional)",
   "graphics": "intro on the face; run scripts/screen_zoom.py on the screen recording (--top 0.04 --area 0.58) and use it as an insert mode bubble with src screen_vertical.mp4 (ss to line it up with what you say); badge overlays 'Step n of m' (tone blue) at each step; a prompt graphic when a prompt is read out; result on the face"
  }
 }

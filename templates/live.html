@@ -49,7 +49,15 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
 <div class="card choose" id="choose" hidden>
  <h3>1. Pick a style</h3><div class="tiles" id="tiles"></div>
  <div id="matbox" hidden><h3>Your material</h3><div class="sub" id="matq"></div>
-  <textarea id="mat" style="width:100%;min-height:54px;margin-top:6px;border:1px solid var(--line);border-radius:8px;padding:6px;font:inherit;font-size:13px"></textarea></div>
+  <div id="drop" style="margin-top:8px;border:1.5px dashed #C9C5BB;border-radius:12px;padding:12px;background:#FAF9F6">
+   <textarea id="mat" placeholder="Share a video link or paste a file path" style="width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;box-sizing:border-box"></textarea>
+   <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
+    <span class="sub">or</span>
+    <label style="background:#fff;border:1.5px solid var(--acc);color:var(--acc);border-radius:99px;padding:6px 14px;font-size:13px;cursor:pointer"><span id="uplbl">Upload a video</span>
+     <input type="file" id="file" hidden></label>
+    <span class="sub" id="dropsub">or drag a file here</span></div>
+   <div id="upbar" hidden style="height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px"><i id="upfill" style="display:block;height:100%;width:0;background:var(--acc)"></i></div>
+   <div id="files" style="font-size:12px;margin-top:6px"></div></div></div>
  <h3>2. How long?</h3><div class="pills" id="lens"></div>
  <h3>3. Extras</h3><div class="pills" id="extras"></div>
  <h3>4. How do you want to finish?</h3><div class="pills" id="finish"></div><div class="sub" id="fcnote"></div>
@@ -99,17 +107,38 @@ function chooseUI(){
  $('extras').onclick=e=>{const b=e.target.closest('button');if(b){const k=b.dataset.k;pick.extras=pick.extras.includes(k)?pick.extras.filter(x=>x!==k):pick.extras.concat([k]);paint()}};
  $('finish').onclick=e=>{const b=e.target.closest('button');if(b&&!b.disabled){pick.finish=b.dataset.k;paint()}};
  $('go').onclick=async()=>{
-  pick.materials=$('mat').value;
-  if((pick.style==='news'||pick.style==='tutorial')&&!pick.materials.trim()){$('err').textContent=pick.style==='news'?'Add your screenshots first':'Add your screen recording first';return}
+  pick.materials=[$('mat').value.trim()].concat(UP).filter(Boolean).join('\n');
+  if(UPPING){$('err').textContent='Wait for the upload to finish';return}
+  if(pick.style==='news'&&!pick.materials){$('err').textContent='Add your screenshots first';return}
   if(pick.style==='describe'&&!pick.describe.trim()){$('err').textContent='Write what you want first, or pick a style';return}
   $('err').textContent='';$('go').disabled=true;
   try{const r=await (await fetch('/api/choose',{method:'POST',headers:{'Content-Type':'application/json','X-Page-Token':TOKEN},body:JSON.stringify(pick)})).json();
    if(!r.ok)throw 0}catch(e){$('err').textContent='Could not send - try again';$('go').disabled=false}};
  paint();
 }
+let UP=[], UPPING=false;
+async function upload(files){
+ for(const f of files){
+  UPPING=true; $('upbar').hidden=false; $('upfill').style.width='0';
+  const ok=await new Promise(res=>{const x=new XMLHttpRequest();x.open('POST','/api/upload');x.setRequestHeader('X-Page-Token',TOKEN);x.setRequestHeader('X-Filename',encodeURIComponent(f.name));
+   x.upload.onprogress=e=>{if(e.lengthComputable)$('upfill').style.width=(e.loaded/e.total*100)+'%'};
+   x.onload=()=>{try{const r=JSON.parse(x.responseText);if(r.ok){UP.push(r.path);res(true)}else{$('err').textContent=r.error;res(false)}}catch(e){res(false)}};
+   x.onerror=()=>{$('err').textContent='Upload failed - try again';res(false)};x.send(f)});
+  UPPING=false;
+ }
+ $('upbar').hidden=true; $('files').innerHTML=UP.map(p=>'&#10003; '+esc(p.split(/[\\/]/).pop())).join('<br>');
+}
+function wireUpload(){
+ if(wireUpload.done)return; wireUpload.done=1;
+ $('file').onchange=e=>upload([...e.target.files]);
+ const dz=$('drop'); dz.ondragover=e=>{e.preventDefault();dz.style.borderColor='var(--acc)'}; dz.ondragleave=()=>dz.style.borderColor='#C9C5BB';
+ dz.ondrop=e=>{e.preventDefault();dz.style.borderColor='#C9C5BB';upload([...e.dataTransfer.files])};
+}
 function paint(){
+ wireUpload();
  const need=pick.style==='news'?'news':pick.style==='tutorial'?'tutorial':''; $('matbox').hidden=!need;
- $('matq').textContent=need==='news'?'Screenshots to react to: paste their file paths or a folder (articles, posts, product pages).':need==='tutorial'?'Your screen recording: paste the file path (the video you uploaded is used for your face).':'';
+ $('matq').textContent=need==='news'?'Screenshots to react to (articles, posts, product pages): share links or file paths, or upload them.':need==='tutorial'?'Your screen recording: share a video link or upload a video. Optional: leave it empty and we build the screen with graphics (an app mock-up that types and clicks). The video you uploaded first is used for your face.':'';
+ if(need){$('uplbl').textContent=need==='news'?'Upload screenshots':'Upload a video'; $('file').accept=need==='news'?'image/*':'video/*'; $('file').multiple=need==='news'}
  if($('mat'))pick.materials=$('mat').value;
  document.querySelectorAll('.tile').forEach(t=>t.classList.toggle('on',t.dataset.k===pick.style));
  document.querySelectorAll('#lens button').forEach(b=>b.classList.toggle('on',b.dataset.k===pick.length));

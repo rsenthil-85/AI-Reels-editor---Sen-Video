@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.1 - 2026-11-28
+- Edit page "Your material" field: share a video link or paste a file path, or upload from the computer (button or
+  drag and drop, progress bar; saved to `<name>_edit/materials/`, videos and images up to 4 GB, page-token protected).
+- Screen tutorial: the screen recording is optional - without one the screen is built with graphics (app mock-up
+  that types and clicks). AI News still needs screenshots (links, paths or uploads).
+
 ## 1.10.0 - 2026-11-28
 - Two new styles: **AI News** (face bubble over full-screen screenshots that zoom to the key line with a marker
   highlight, Breaking/New badges) and **Screen tutorial** (screen recording auto-zoomed to clicks and typing,
