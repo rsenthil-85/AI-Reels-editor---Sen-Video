@@ -1,0 +1,63 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"../node_modules/three/build/three.module.js"}}</script>
+</head><body>
+<script type="module">
+// motionbg: seamless looping animated background (shader). params: style aurora|grid|bokeh, acc (accent), base (dark colour), dur (loop length)
+import * as THREE from 'three';
+THREE.ColorManagement.enabled = false;   // feed sRGB colours straight to the shader
+const Q = new URLSearchParams(location.search), P = k => Q.get(k) || '';
+const W = +P('w') || 1080, H = +P('h') || 864, DUR = +P('dur') || 8;
+const STYLE = { aurora: 0, grid: 1, bokeh: 2, paper: 3, dots: 4 }[P('style') || 'aurora'] ?? 0;
+const r = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); r.outputColorSpace = THREE.LinearSRGBColorSpace;
+document.body.appendChild(r.domElement);
+const col = h => new THREE.Color(h);
+const mat = new THREE.ShaderMaterial({
+  uniforms: { t: { value: 0 }, res: { value: new THREE.Vector2(W, H) }, acc: { value: col(P('acc') || '#E8603C') },
+              base: { value: col(P('base') || '#0d0e14') }, style: { value: STYLE } },
+  vertexShader: `void main(){ gl_Position = vec4(position.xy, 0., 1.); }`,
+  fragmentShader: `
+    precision highp float; uniform float t; uniform vec2 res; uniform vec3 acc; uniform vec3 base; uniform int style;
+    // loop: every motion term is a function of the phase p = 2*pi*t/DUR, so frame DUR == frame 0
+    float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+      return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
+    float fbm(vec2 p){ float v=0., a=.5; for(int i=0;i<5;i++){ v+=a*n(p); p*=2.03; a*=.5; } return v; }
+    void main(){
+      vec2 uv = gl_FragCoord.xy / res; vec2 q = (gl_FragCoord.xy - .5*res) / res.y;
+      float ph = t; vec2 o = vec2(cos(ph), sin(ph)) * .6;
+      vec3 c = base;
+      if (style == 0) {           // aurora: slow flowing ribbons of accent light
+        float f = fbm(q*1.6 + o) ; float g = fbm(q*2.2 - o*.7 + f);
+        float band = smoothstep(.35, .95, g) * (1. - smoothstep(.0, 1.1, abs(q.y + .25*sin(q.x*2.+ph))));
+        c += acc * band * 1.1 + vec3(.25,.35,.9) * smoothstep(.5,1.,f) * .35 + acc * .06;
+      } else if (style == 1) {    // grid: perspective tech grid scrolling toward the viewer
+        float y = q.y + .55; float z = .45 / max(y, .02);
+        vec2 g = vec2(q.x * z, z + ph / 6.2831 * 2.);
+        vec2 gl = abs(fract(g) - .5); float line = smoothstep(.47, .5, max(gl.x, gl.y)) * smoothstep(-.05, .3, -q.y + .1) ;
+        c += acc * line * .9 * exp(-z*.12) + acc * .25 * exp(-abs(q.y + .05) * 5.);
+      } else if (style == 3) {    // paper: light textured paper, faint ruled grid drifting slowly
+        c = base; vec2 g = gl_FragCoord.xy / 48. + vec2(ph / 6.2831 * 2., 0.);
+        vec2 gl2 = abs(fract(g) - .5); c -= vec3(.035) * smoothstep(.47, .5, max(gl2.x, gl2.y));
+        c -= vec3(.025) * fbm(q * 6. + o * .2); c += acc * .025 * (1. - uv.y);
+      } else if (style == 4) {    // dots: light background, dot grid drifting
+        c = base; vec2 g = gl_FragCoord.xy / 36. + vec2(0., ph / 6.2831 * 2.);
+        c -= vec3(.10) * smoothstep(.16, .10, length(fract(g) - .5)); c += acc * .03 * uv.x;
+      } else {                    // bokeh: soft drifting circles
+        for (int i = 0; i < 18; i++) { float fi = float(i);
+          vec2 p = vec2(h(vec2(fi,1.))*2.-1., h(vec2(fi,2.))*2.-1.) * vec2(res.x/res.y, 1.) * .6;
+          p += .08 * vec2(cos(ph + fi), sin(ph*1. + fi*1.7));
+          float rr = .05 + .12 * h(vec2(fi,3.)); float d = length(q - p);
+          c += mix(acc, vec3(1.), h(vec2(fi,4.))*.4) * smoothstep(rr, rr*.6, d) * .32; }
+      }
+      if (style < 3) c *= 1. - .35 * dot(uv-.5, uv-.5) * 2.;       // vignette (dark styles only)
+      c += (h(gl_FragCoord.xy + floor(t*30.)) - .5) * .015;       // fine grain (no banding)
+      gl_FragColor = vec4(c, 1.);
+    }` });
+const scene = new THREE.Scene(); scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
+const cam = new THREE.Camera();
+window.DUR = DUR;
+window.render = t => { mat.uniforms.t.value = 2 * Math.PI * (t % DUR) / DUR; r.render(scene, cam); };
+window.render(0); window.READY = true;
+</script></body></html>

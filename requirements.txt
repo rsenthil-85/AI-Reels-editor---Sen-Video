@@ -1,0 +1,10 @@
+# pro-video-editor Python deps (all permissive): MIT unless noted
+faster-whisper>=1.1      # MIT (CTranslate2: MIT; Whisper weights: MIT)
+av==18.1.0               # BSD-3; pinned: newer builds are blocked by Smart App Control until Windows trusts them. Audio is decoded by ffmpeg, not av
+numpy>=1.26              # BSD-3
+pillow>=10               # MIT-CMU (HPND)
+fonttools>=4.50          # MIT
+librosa>=0.10            # ISC - beat sync
+soundfile>=0.12          # BSD-3
+onnxruntime>=1.18        # MIT - person model (auto face framing, background matte)
+yt-dlp>=2026.1          # Unlicense (public domain) - learn_style.py reference downloads

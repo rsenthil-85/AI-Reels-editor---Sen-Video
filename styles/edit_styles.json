@@ -1,0 +1,40 @@
+{
+ "mixed": {
+  "label": "Clean cards",
+  "question": "Mix of face only, a card with your face in a rounded window, and full-screen cards. Serif key-word captions.",
+  "learned_from": "references/style-refs.md refs 1-6",
+  "layout": "mixed",
+  "split_style": "inset",
+  "caption": "duo",
+  "grade": true,
+  "transitions": true,
+  "uses_look": true,
+  "graphics": "title card at frame 1; card or card + face every 2-4 s (diagram, checklist, counter, prompt, step header); icon stickers over the face for tools and objects; comment CTA at the end",
+  "tagline": "Cards with your face in a window, key words in serif"
+ },
+ "studio": {
+  "label": "Bold B-roll",
+  "question": "Warm cinematic face, a hook title band, full-screen B-roll with big numbers for each point, stacked-word captions, glowing comment CTA and an end card.",
+  "learned_from": "references/style-refs.md ref 7 (Senthil Sir Output.mp4)",
+  "layout": "studio",
+  "caption": "stack",
+  "grade": "warm",
+  "transitions": false,
+  "uses_look": false,
+  "accent": "#D7FF3A",
+  "graphics": "0-4 s: B-roll or device mock-up on top + band overlay (green l1, italic l2) at the seam, face below; then face full frame; every listed point = full-screen B-roll (user clips/screenshots, else device mock-up) 2.5-5 s with a bignum overlay; ctaword overlay on the 'comment X' line; endcard (2-5 s, black) last",
+  "tagline": "Hook title band, big numbers on phone shots, stacked words"
+ },
+ "simple": {
+  "label": "Face and captions",
+  "question": "Your face the whole time with zoom-ins, word-highlight captions and a title. Quickest to make.",
+  "learned_from": "talking-head-reel preset",
+  "layout": "face",
+  "caption": "karaoke",
+  "grade": true,
+  "transitions": false,
+  "uses_look": true,
+  "graphics": "title on frame 1; one or two chapter word cards; counter for numbers; nothing else",
+  "tagline": "Your face all the way, zoom-ins, word-highlight captions"
+ }
+}

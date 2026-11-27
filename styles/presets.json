@@ -1,0 +1,145 @@
+{
+  "ai-explainer-reel": {
+    "when": "vertical talking head, 20-120 s, topic is AI / tech / money / side hustle / how-to",
+    "format": "reel",
+    "caption_style": "bold",
+    "caption_y": 0.8,
+    "accent": "#FFE45C",
+    "music": "auto:upbeat",
+    "music_db": -14,
+    "punch": "auto",
+    "grade": true,
+    "sharpen": 0.35,
+    "graphics": [
+      "flat paper title (frame 1)",
+      "diagram per step",
+      "prompt box for any prompt said aloud",
+      "counter for numbers",
+      "full-screen paper chapter card on a key line",
+      "title CTA at end"
+    ],
+    "layout": "split-stack: graphic top 45%, face bottom 55%; something changes every 2-4 s",
+    "reference": "references/playbook-ai-niche.md",
+    "theme": "paper",
+    "panel_bg": "auto:paper",
+    "panel_base": "#F4F2EC",
+    "transitions": true,
+    "look": "Clean Paper (user's choice 2026-11-27): off-white panels, black text, blue buttons, yellow highlighter. No glow, no 3D, no aurora.",
+    "sfx_density": "high"
+  },
+  "talking-head-reel": {
+    "when": "vertical talking head on any other topic (motivation, lifestyle, story, opinion)",
+    "format": "reel",
+    "caption_style": "bold",
+    "caption_y": 0.72,
+    "accent": "#FFD43B",
+    "music": "auto:upbeat",
+    "music_db": -14,
+    "punch": "auto",
+    "grade": true,
+    "sharpen": 0.3,
+    "graphics": [
+      "title3d or title on frame 1",
+      "chapter word cards for each key point",
+      "counter for numbers"
+    ],
+    "layout": "full-face with punch-ins; full-frame graphics for 1.5-2.5 s at each key point",
+    "sfx_density": "high"
+  },
+  "tutorial-long": {
+    "when": "horizontal, > 3 min, screen recording or demo content",
+    "format": "long",
+    "captions": false,
+    "accent": "#E8603C",
+    "music": "auto:corporate",
+    "music_db": -28,
+    "punch": "auto",
+    "grade": true,
+    "graphics": [
+      "title3d cold-open card",
+      "chapter card per section",
+      "lower-third for people",
+      "counter for results"
+    ],
+    "layout": "screen recordings in bubble mode (face cam bottom-left); zoom on the UI being discussed",
+    "extras": [
+      "yt-chapters",
+      "yt-package",
+      "yt-seo",
+      "yt-shorts -> reels"
+    ],
+    "sfx_density": "medium"
+  },
+  "talking-head-long": {
+    "when": "horizontal talking head, > 3 min, little screen content",
+    "format": "long",
+    "captions": false,
+    "accent": "#E8603C",
+    "music": "auto:chill",
+    "music_db": -28,
+    "punch": "auto",
+    "grade": true,
+    "sharpen": 0.25,
+    "graphics": [
+      "cold-open title",
+      "chapter card per section",
+      "counter / diagram for key ideas"
+    ],
+    "layout": "punch-in every other sentence; B-roll or graphic at least every 20-30 s",
+    "extras": [
+      "yt-chapters",
+      "yt-package",
+      "yt-seo",
+      "yt-shorts -> reels"
+    ],
+    "sfx_density": "medium"
+  },
+  "podcast-clip": {
+    "when": "horizontal, two people or interview, cut down to a vertical clip",
+    "format": "reel",
+    "caption_style": "bold",
+    "caption_y": 0.7,
+    "accent": "#3BC9DB",
+    "music": null,
+    "punch": "auto",
+    "grade": true,
+    "graphics": [
+      "title on frame 1 with the clip's claim",
+      "name lower-third"
+    ],
+    "layout": "crop to the active speaker (set face_x per section), captions large"
+  },
+  "cinematic-montage": {
+    "when": "little or no speech (B-roll, travel, product, event footage)",
+    "format": "as source",
+    "captions": false,
+    "accent": "#F1F3F5",
+    "music": "auto:cinematic",
+    "music_db": -14,
+    "beat_sync": true,
+    "grade": true,
+    "graphics": [
+      "title3d opener",
+      "minimal end card"
+    ],
+    "layout": "cut on bars/beats (montage.py), slow push-ins, no talking-head rules"
+  },
+  "product-launch": {
+    "when": "product / app / SaaS launch, feature reveal, demo with hype",
+    "format": "as source",
+    "caption_style": "bold",
+    "accent": "#7950F2",
+    "music": "auto:tech",
+    "music_db": -14,
+    "beat_sync": true,
+    "grade": true,
+    "graphics": [
+      "title3d reveal",
+      "diagram of features",
+      "counter for stats",
+      "prompt box for commands"
+    ],
+    "layout": "fast cuts on beats, full-frame graphics between shots",
+    "sfx_density": "high"
+  }
+}

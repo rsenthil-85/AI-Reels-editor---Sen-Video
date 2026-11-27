@@ -1,0 +1,20 @@
+# rebuilt by install.ps1
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# big model files (GitHub limit 100 MB) - downloaded by install.ps1 / the vendored project's own setup
+*.onnx
+vendor/lemo-opuscar/core/tts/voices-v1.0.bin
+assets/models/
+assets/rnnoise/*.rnnn
+
+# frames and audio taken from other creators' videos while studying them (study only, not ours to share)
+references/refs/
+
+# renders and scratch
+*.mp4
+*.mov
+*.wav
+!assets/sfx/*.wav

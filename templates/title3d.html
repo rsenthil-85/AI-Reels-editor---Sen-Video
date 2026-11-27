@@ -1,0 +1,87 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Pop;src:url(../assets/fonts/Poppins-ExtraBold.ttf);font-weight:800}
+@font-face{font-family:Serif;src:url(../assets/fonts/InstrumentSerif-Italic.ttf);font-style:italic}
+html,body{margin:0;background:#07070a;overflow:hidden}
+canvas{display:block}
+</style>
+<script type="importmap">{"imports":{"three":"../node_modules/three/build/three.module.js","three/addons/":"../node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+// title3d: a glowing 3D title in space - text cards on planes, drifting particles, camera dolly, bloom.
+// params: l1 (small serif line), big (huge word), l2 (small line), acc (accent colour), dur, w, h
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const Q = new URLSearchParams(location.search), P = k => Q.get(k) || '';
+const W = +P('w') || 1080, H = +P('h') || 1920, DUR = +P('dur') || 3, ACC = P('acc') || '#E8603C';
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x)), seg = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const eo = x => 1 - Math.pow(1 - x, 3);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H); renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x07070a, 0.045);
+const cam = new THREE.PerspectiveCamera(38, W / H, 0.1, 200);
+
+function textPlane(text, font, px, color, glow) {
+  const c = document.createElement('canvas'), g = c.getContext('2d');
+  g.font = `${font.replace('%', px)}`; const tw = Math.ceil(g.measureText(text).width) + px;
+  c.width = tw; c.height = Math.ceil(px * 1.6);
+  g.font = `${font.replace('%', px)}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (glow) { g.shadowColor = color; g.shadowBlur = px * 0.12; }
+  g.fillStyle = color; g.fillText(text, c.width / 2, c.height / 2);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(c.width / 200, c.height / 200), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+  return m;
+}
+
+await document.fonts.load('800 100px Pop'); await document.fonts.load('italic 100px Serif');
+const portrait = H > W, base = portrait ? 1 : 1.3;
+const lines = [];
+if (P('l1')) lines.push(textPlane(P('l1'), 'italic %px Serif', 120, '#ffffff', false));
+const big = textPlane((P('big') || 'TITLE').toUpperCase(), '800 %px Pop', 260, ACC, true); lines.push(big);
+if (P('l2')) lines.push(textPlane(P('l2'), 'italic %px Serif', 120, '#ffffff', false));
+// fit the visible frustum at the settle distance (~7.8 units): works for any frame shape
+const visH = 2 * Math.tan(THREE.MathUtils.degToRad(19)) * 7.8, visW = visH * W / H;
+const maxW = visW * 0.80, maxH = visH * 0.70;
+let y = 0; const gap = 0.15, group = new THREE.Group();
+lines.forEach(m => { const s = Math.min(base, maxW / m.geometry.parameters.width); m.scale.setScalar(s); });
+const hs = lines.map(m => m.geometry.parameters.height * m.scale.y), total = hs.reduce((a, b) => a + b, 0) + gap * (lines.length - 1);
+if (total > maxH) { const f = maxH / total; lines.forEach(m => m.scale.multiplyScalar(f)); }
+const hs2 = lines.map(m => m.geometry.parameters.height * m.scale.y), total2 = hs2.reduce((a, b) => a + b, 0) + gap * (lines.length - 1);
+y = total2 / 2; lines.forEach((m, i) => { y -= hs2[i] / 2; m.position.y = y; y -= hs2[i] / 2 + gap; group.add(m); });
+scene.add(group);
+
+// particles
+const N = 900, pos = new Float32Array(N * 3), rnd = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(12345);
+for (let i = 0; i < N; i++) { pos[i * 3] = (rnd() - .5) * 30; pos[i * 3 + 1] = (rnd() - .5) * 30; pos[i * 3 + 2] = -rnd() * 30 + 4; }
+const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+const pts = new THREE.Points(pg, new THREE.PointsMaterial({ color: new THREE.Color(ACC), size: 0.05, transparent: true, opacity: 0.8 }));
+scene.add(pts);
+// accent ring behind the title
+const ring = new THREE.Mesh(new THREE.TorusGeometry(Math.min(visW, visH) * 0.42, 0.015, 8, 160), new THREE.MeshBasicMaterial({ color: new THREE.Color(ACC) }));
+ring.position.z = -1.2; scene.add(ring);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, cam));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.45, 0.5, 0.55));
+composer.addPass(new OutputPass());
+
+window.DUR = DUR;
+window.render = t => {
+  const k = eo(seg(t, 0, Math.min(1.2, DUR * .5))), out = seg(t, DUR - .35, DUR);
+  cam.position.set(Math.sin(t * .35) * .6, Math.cos(t * .3) * .3, 11 - 3.2 * k + 0.6 * t / DUR);
+  cam.lookAt(0, 0, 0);
+  lines.forEach((m, i) => { const a = eo(seg(t, .1 + i * .15, .6 + i * .15)); m.material.opacity = a * (1 - out); m.position.z = (1 - a) * -3; });
+  group.rotation.y = (1 - k) * .5 + Math.sin(t * .6) * .04;
+  ring.scale.setScalar(.6 + .4 * eo(seg(t, .2, 1.0))); ring.material.opacity = 1 - out; ring.material.transparent = true;
+  ring.rotation.z = t * .3; pts.rotation.y = t * .05; pts.position.z = t * .8; pts.material.opacity = .8 * (1 - out);
+  composer.render();
+};
+window.render(0); window.READY = true;
+</script></body></html>

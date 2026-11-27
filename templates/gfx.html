@@ -1,0 +1,253 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Pop;src:url(../assets/fonts/Poppins-Bold.ttf);font-weight:700}
+@font-face{font-family:Pop;src:url(../assets/fonts/Poppins-ExtraBold.ttf);font-weight:800}
+@font-face{font-family:Pop;src:url(../assets/fonts/Poppins-Medium.ttf);font-weight:500}
+@font-face{font-family:Serif;src:url(../assets/fonts/InstrumentSerif-Regular.ttf)}
+@font-face{font-family:Serif;src:url(../assets/fonts/InstrumentSerif-Italic.ttf);font-style:italic}
+@font-face{font-family:Blk;src:url(../assets/fonts/ArchivoBlack-Regular.ttf)}
+@font-face{font-family:DMS;src:url(../assets/fonts/DMSerifDisplay-Regular.ttf)}
+@font-face{font-family:Pop;src:url(../assets/fonts/Poppins-LightItalic.ttf);font-weight:300;font-style:italic}
+:root{--acc:#E8603C;--ink:#fff;--card:#1b1b1f;--line:#2e2e35;--on-acc:#fff;--body:#e9e9ee;--shadow:rgba(0,0,0,.45);--hl:var(--acc);--word:var(--acc);--wordbg:none}
+html,body{margin:0;background:transparent;overflow:hidden}
+#s{position:absolute;inset:0;font-family:Pop;color:var(--ink)}
+.abs{position:absolute}
+.serif{font-family:Serif;font-style:italic;font-weight:400}
+.box{background:var(--acc);color:var(--on-acc);border-radius:14px;padding:.05em .35em;display:inline-block;font-family:Serif;font-style:normal}
+.card{background:var(--card);border:2px solid var(--line);border-radius:22px;box-shadow:0 20px 60px var(--shadow)}
+.ico{display:inline-block;background:var(--acc);border-radius:14px;padding:10px;line-height:0}
+.ico svg{stroke:var(--on-acc)}
+</style></head><body><div id="s"></div>
+<script>
+const Q=new URLSearchParams(location.search);
+const P=k=>Q.get(k)||'';
+const W=+P('w')||1080,H=+P('h')||864,TYPE=P('type')||'title',DUR=+P('dur')||2.5;
+document.body.style.width=W+'px';document.body.style.height=H+'px';
+// themes from what working channels use (2026-11 palette study): dark (Patrick Dang), paper (Nate Herk / Vaibhav),
+// highlight (Liam Ottley / AI Master yellow), navy (Mark Tilbury), mint (Symone). Any var can be overridden by param.
+const THEMES={dark:{},
+ paper:{word:'#16181D',wordbg:'linear-gradient(transparent 58%,#FFE45C 58%)',acc:'#2F6FED',ink:'#16181D',card:'#FFFFFF',line:'#E3E1DA','on-acc':'#fff',body:'#2A2D34',shadow:'rgba(30,30,40,.12)',hl:'#FFE45C'},
+ highlight:{word:'#111',wordbg:'linear-gradient(transparent 58%,#F2C524 58%)',acc:'#F2C524',ink:'#111',card:'#FFFFFF',line:'#E6E2D3','on-acc':'#111',body:'#222',shadow:'rgba(0,0,0,.14)',hl:'#F2C524'},
+ navy:{acc:'#E9B949',ink:'#FFFFFF',card:'#22345A',line:'#34497A','on-acc':'#14213D',body:'#E6ECF7',shadow:'rgba(0,0,0,.35)',hl:'#E9B949'},
+ mint:{word:'#14171A',wordbg:'linear-gradient(transparent 58%,#BBF7D0 58%)',acc:'#16A34A',ink:'#14171A',card:'#FFFFFF',line:'#DDE7E0','on-acc':'#fff',body:'#23302A',shadow:'rgba(20,60,40,.12)',hl:'#BBF7D0'}};
+const TH=THEMES[P('theme')]||{}; for(const k in TH) document.documentElement.style.setProperty('--'+k,TH[k]);
+for(const k of ['acc','ink','card','line','on-acc','body']) if(P(k)) document.documentElement.style.setProperty('--'+k,P(k));
+if(P('bg'))document.body.style.background=P('bg');
+const S=document.getElementById('s');
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x)), seg=(t,a,b)=>clamp((t-a)/(b-a),0,1);
+const eo=x=>1-Math.pow(1-x,3), back=(x,s=1.7)=>1+(s+1)*Math.pow(x-1,3)+s*Math.pow(x-1,2);
+const outT=t=>seg(t,DUR-.25,DUR); // fade-out window
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+async function icon(name,size=40){try{const r=await fetch('../assets/icons/'+name+'.svg');let t=await r.text();return t.replace(/width="\d+"/,`width="${size}"`).replace(/height="\d+"/,`height="${size}"`)}catch(e){return''}}
+const u=Math.min(W,H)/864*(+P('k')||1); // scale unit (k = extra zoom)
+let render=()=>{};
+
+async function build(){
+ if(TYPE==='title'){ // l1 / money / l2  (serif, money in accent box)
+  S.innerHTML=`<div class="abs" id="g" style="left:0;right:0;top:${H*.5}px;transform:translateY(-50%);text-align:center">
+   <div id="a" class="serif" style="font-size:${74*u}px">${esc(P('l1'))}</div>
+   <div id="b" style="margin:${10*u}px 0"><span class="box" style="font-size:${112*u}px">${esc(P('money'))}</span></div>
+   <div id="c" class="serif" style="font-size:${74*u}px">${esc(P('l2'))}</div></div>`;
+  if(!P('l2'))document.getElementById('c').remove(); if(!P('money'))document.getElementById('b').remove();
+  render=t=>{[...S.querySelectorAll('#g>div')].forEach((e,i)=>{const k=eo(seg(t,i*.12,i*.12+.35));e.style.opacity=k*(1-outT(t));e.style.transform=`translateY(${(1-k)*30*u}px) scale(${e.id==='b'?.7+.3*back(seg(t,.12,.5)):1})`})};
+ }
+ else if(TYPE==='chapter'){ // small label + huge word
+  S.innerHTML=`<div class="abs" style="left:${80*u}px;bottom:${120*u}px"><div id="a" class="serif" style="font-size:${48*u}px">${esc(P('label'))}</div>
+   <div id="b" style="font-weight:800;font-size:${130*u}px;line-height:1;color:var(--word);letter-spacing:-.02em"><span style="background:var(--wordbg);padding:0 .08em">${esc(P('keepcase')?P('word'):P('word').toUpperCase())}</span></div></div>`;
+  if(P('center')){const g=S.firstChild;g.style.cssText=`left:0;right:0;top:50%;transform:translateY(-50%);text-align:center`}
+  render=t=>{const a=eo(seg(t,0,.35)),b=eo(seg(t,.1,.5)),o=1-outT(t);
+   const A=document.getElementById('a'),B=document.getElementById('b');A.style.opacity=a*o;B.style.opacity=b*o;
+   B.style.clipPath=`inset(0 ${100-100*b}% 0 0)`;A.style.transform=`translateX(${(1-a)*-40}px)`};
+ }
+ else if(TYPE==='lower'){ // name + role, optional photo, arrow
+  const photo=P('photo')?`<img src="${P('photo')}" style="width:${150*u}px;height:${150*u}px;object-fit:cover;border-radius:18px;filter:grayscale(1)">`:'';
+  S.innerHTML=`<div class="abs" id="g" style="left:${70*u}px;bottom:${70*u}px;display:flex;align-items:center;gap:${24*u}px">${photo}
+   <div><svg id="ar" width="${130*u}" height="${58*u}" viewBox="0 0 90 40" style="display:block"><path d="M85 30 C60 5 30 5 8 22 M8 22 l14 -2 M8 22 l4 13" fill="none" stroke="var(--acc)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="140" stroke-dashoffset="140"/></svg>
+   <div id="n" style="font-weight:700;font-size:${64*u}px;color:var(--word);line-height:1.1"><span style="background:var(--wordbg)">${esc(P('name'))}</span></div>
+   <div id="r" class="serif" style="font-size:${44*u}px">${esc(P('role'))}</div></div></div>`;
+  render=t=>{const k=eo(seg(t,0,.4)),o=1-outT(t);const g=document.getElementById('g');g.style.opacity=k*o;g.style.transform=`translateX(${(1-k)*-60}px)`;
+   S.querySelector('#ar path').style.strokeDashoffset=140*(1-eo(seg(t,.2,.7)))};
+ }
+ else if(TYPE==='counter'){ // big number counting up
+  const raw=P('value')||'$10,000', num=+raw.replace(/[^\d.]/g,''), pre=raw.match(/^[^\d]*/)[0], suf=raw.match(/[^\d.,]*$/)[0];
+  S.innerHTML=`<div class="abs" style="inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+   <div id="v" style="font-weight:800;font-size:${170*u}px;letter-spacing:-.03em;text-shadow:0 8px 40px var(--shadow)"></div>
+   <div id="c" class="serif" style="font-size:${52*u}px">${esc(P('caption'))}</div></div>`;
+  render=t=>{const k=eo(seg(t,0,Math.min(1.4,DUR*.6))),o=1-outT(t);const v=document.getElementById('v');
+   v.textContent=pre+Math.round(num*k).toLocaleString('en-US')+suf;v.style.opacity=seg(t,0,.15)*o;
+   v.style.transform=`scale(${.85+.15*back(seg(t,0,.5))})`;document.getElementById('c').style.opacity=seg(t,.4,.7)*o};
+ }
+ else if(TYPE==='prompt'){ // "Type this into <tool>" + typing prompt box
+  const txt=P('text');
+  S.innerHTML=`<div class="abs" style="left:0;right:0;top:${H*.12}px;text-align:center;font-weight:700;font-size:${46*u}px">${esc(P('head')||'Type This Into')} <span style="color:var(--acc)">${esc(P('tool')||'Claude')}</span></div>
+   <div id="cd" class="card abs" style="left:${W*.08}px;right:${W*.08}px;top:${H*.28}px;padding:${30*u}px">
+   <div style="display:flex;gap:8px;margin-bottom:${18*u}px"><i style="width:12px;height:12px;border-radius:9px;background:#ff5f57"></i><i style="width:12px;height:12px;border-radius:9px;background:#febc2e"></i><i style="width:12px;height:12px;border-radius:9px;background:#28c840"></i></div>
+   <div id="tx" style="font-weight:500;font-size:${34*u}px;line-height:1.45;min-height:${150*u}px;color:var(--body)"></div>
+   <div style="text-align:right"><span style="background:var(--acc);color:var(--on-acc);border-radius:10px;padding:6px 14px;font-weight:700;font-size:${26*u}px">↑</span></div></div>`;
+  render=t=>{const cd=document.getElementById('cd'),k=eo(seg(t,0,.35)),o=1-outT(t);cd.style.opacity=k*o;S.firstElementChild.style.opacity=k*o;
+   cd.style.transform=`translateY(${(1-k)*40}px)`;const n=Math.floor(txt.length*seg(t,.4,Math.max(.6,DUR-.9)));
+   document.getElementById('tx').innerHTML=esc(txt.slice(0,n))+(n<txt.length&&Math.floor(t*3)%2===0?'|':'')};
+ }
+ else if(TYPE==='diagram'){ // items "Your Skill|AI" joined by op, result below
+  const items=P('items').split('|').filter(Boolean), icons=(P('icons')||'').split('|'), op=P('op')||'+', res=P('result');
+  const ic=await Promise.all(items.map((_,i)=>icon(icons[i]||'sparkles',36*u)));
+  const ri=res?await icon(P('ricon')||'rocket',32*u):'';
+  S.innerHTML=`<div class="abs" style="left:0;right:0;top:${H*.1}px;text-align:center;font-weight:700;font-size:${42*u}px" id="hd">${esc(P('head'))}</div>
+  <div class="abs" id="row" style="left:0;right:0;top:${H*.3}px;display:flex;justify-content:center;align-items:center;gap:${22*u}px;transform-origin:50% 50%">${items.map((s,i)=>`${i?`<div class="op" style="font-weight:800;font-size:${50*u}px;color:var(--acc)">${esc(op)}</div>`:''}<div class="card it" style="padding:${22*u}px ${28*u}px;display:flex;align-items:center;gap:${16*u}px"><span class="ico">${ic[i]}</span><span style="font-weight:700;font-size:${34*u}px;white-space:nowrap">${esc(s)}</span></div>`).join('')}</div>
+  ${res?`<div class="abs" id="rs" style="left:0;right:0;top:${H*.62}px;text-align:center"><span style="display:inline-flex;align-items:center;gap:12px;background:var(--acc);color:var(--on-acc);border-radius:999px;padding:${16*u}px ${34*u}px;font-weight:700;font-size:${36*u}px">${ri}${esc(res)}</span></div>`:''}`;
+  let fitted=false;
+  render=t=>{if(!fitted){fitted=true;const row=document.getElementById('row');   // shrink wide rows to fit the frame
+    const kids=[...row.children];const need=kids.reduce((a,e)=>a+e.offsetWidth,0)+(kids.length-1)*22*u;
+    if(need>W*.92)row.style.transform=`scale(${(W*.92/need).toFixed(3)})`;}
+   const o=1-outT(t);document.getElementById('hd').style.opacity=seg(t,0,.3)*o;
+   const all=[...S.querySelectorAll('.it,.op')];all.forEach((e,i)=>{const k=eo(seg(t,.15+i*.18,.45+i*.18));e.style.opacity=k*o;e.style.transform=`scale(${.8+.2*back(k)})`});
+   const r=document.getElementById('rs');if(r){const k=eo(seg(t,.3+all.length*.18,.7+all.length*.18));r.style.opacity=k*o;r.style.transform=`translateY(${(1-k)*30}px)`}};
+ }
+ else if(TYPE==='checklist'){ // items tick off one by one (style refs 3, 6). layout list|grid, ticks spread over the card
+  const items=P('items').split('|').filter(Boolean), icons=(P('icons')||'').split('|'), subs=(P('subs')||'').split('|'), n=items.length;
+  const grid=P('layout')==='grid';
+  const ic=await Promise.all(items.map((_,i)=>icon(icons[i]||'circle',30*u))); const ck=await icon('check',22*u);
+  const tw=grid?W*.40:W*.78;
+  S.innerHTML=`<div class="abs" id="hd" style="left:0;right:0;top:${H*.08}px;text-align:center;font-weight:700;font-size:${44*u}px">${esc(P('head'))}</div>
+   <div class="abs" style="left:0;right:0;top:${H*.22}px;display:flex;flex-wrap:wrap;justify-content:center;gap:${18*u}px">${items.map((t,i)=>`
+    <div class="card it" style="width:${tw}px;box-sizing:border-box;padding:${18*u}px ${20*u}px;display:flex;align-items:center;gap:${16*u}px;border-radius:${18*u}px">
+     <span class="ico" style="padding:${8*u}px">${ic[i]}</span>
+     <span style="flex:1;text-align:left"><div style="font-weight:700;font-size:${30*u}px;line-height:1.15">${esc(t)}</div>${subs[i]?`<div style="font-size:${20*u}px;opacity:.55;margin-top:${4*u}px">${esc(subs[i])}</div>`:''}</span>
+     <span class="ck" style="flex:none;width:${38*u}px;height:${38*u}px;border-radius:50%;border:${3*u}px solid var(--line);display:flex;align-items:center;justify-content:center;box-sizing:border-box">${ck}</span></div>`).join('')}</div>
+   ${P('result')?`<div class="abs" id="rs" style="left:0;right:0;top:${H*(grid?.80:.86)}px;text-align:center"><span style="background:var(--acc);color:var(--on-acc);font-weight:700;font-size:${32*u}px;border-radius:999px;padding:${12*u}px ${30*u}px">${esc(P('result'))}</span></div>`:''}`;
+  S.querySelectorAll('.ck svg').forEach(e=>{e.style.stroke='#fff';e.style.opacity=0});
+  const tick=i=>.7+i*Math.max(.35,(DUR-1.6)/Math.max(1,n-1));
+  render=t=>{const o=1-outT(t);document.getElementById('hd').style.opacity=seg(t,0,.3)*o;
+   S.querySelectorAll('.it').forEach((e,i)=>{const k=eo(seg(t,.1+i*.08,.45+i*.08));e.style.opacity=k*o;e.style.transform=`translateY(${(1-k)*20}px)`;
+    const c=e.querySelector('.ck'),on=seg(t,tick(i),tick(i)+.18);c.style.background=on>0?'var(--acc)':'transparent';c.style.borderColor=on>0?'var(--acc)':'var(--line)';
+    c.style.transform=`scale(${on>0&&on<1?1+.3*Math.sin(on*Math.PI):1})`;c.querySelector('svg').style.opacity=on;e.style.borderColor=on>0?'var(--acc)':'var(--line)'});
+   const r=document.getElementById('rs');if(r){const k=eo(seg(t,tick(n-1)+.3,tick(n-1)+.7));r.style.opacity=k*o;r.style.transform=`scale(${.8+.2*back(k)})`}};
+ }
+ else if(TYPE==='sticker'){ // icon sticker that pops in next to the speaker (style refs 1, 4). icon | img, optional label
+  const big=Math.min(W,H*(P('label')?.79:1))*.62; const ih=P('img')?`<img src="${P('img')}" style="width:${big*.62}px;height:${big*.62}px;object-fit:contain">`:await icon(P('icon')||'sparkles',big*.5);
+  S.innerHTML=`<div class="abs" id="st" style="left:50%;top:${P('label')?'42%':'50%'};transform:translate(-50%,-50%)">
+   <div class="card" style="width:${big}px;height:${big}px;border-radius:${big*.24}px;display:flex;align-items:center;justify-content:center;background:#fff;border:none;box-shadow:0 ${big*.06}px ${big*.18}px rgba(0,0,0,.28)">${ih}</div>
+   ${P('label')?`<div style="margin-top:${big*.08}px;text-align:center;font-weight:800;font-size:${big*.2}px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6);white-space:nowrap">${esc(P('label'))}</div>`:''}</div>`;
+  const sv=S.querySelector('svg'); if(sv){sv.style.stroke=P('color')||'var(--acc)';}
+  render=t=>{const k=seg(t,0,.35),o=1-outT(t);const e=document.getElementById('st');e.style.opacity=Math.min(1,k*3)*o;
+   const sc=k<1?back(k,2.6):1;e.style.transform=`translate(-50%,-50%) scale(${sc*(1-.15*outT(t))}) rotate(${(1-eo(k))*-12}deg)`};
+ }
+ else if(TYPE==='comment'){ // CTA: "Comment" + keyword pill + a mock comment bubble (style ref 2)
+  const hi=await icon('heart',26*u);
+  S.innerHTML=`<div class="abs" style="left:0;right:0;top:${H*.30}px;text-align:center">
+   <div id="c1" class="serif" style="font-size:${70*u}px">${esc(P('l1')||'Comment')}</div>
+   <div id="c2" style="margin-top:${8*u}px"><span style="display:inline-block;background:var(--acc);color:var(--on-acc);font-weight:800;font-size:${86*u}px;border-radius:${18*u}px;padding:0 ${26*u}px;letter-spacing:.02em">${esc((P('word')||'GUIDE').toUpperCase())}</span></div>
+   <div id="c3" class="card" style="display:inline-flex;align-items:center;gap:${14*u}px;margin-top:${26*u}px;padding:${12*u}px ${22*u}px;border-radius:999px">
+     <span style="width:${30*u}px;height:${30*u}px;border-radius:50%;background:var(--acc);display:inline-block"></span>
+     <span style="font-weight:700;font-size:${30*u}px;color:var(--ink)">${esc((P('word')||'GUIDE').toUpperCase())}</span>
+     <span class="hrt" style="line-height:0;margin-left:${40*u}px">${hi}</span></div>
+   <div id="c4" class="serif" style="font-size:${40*u}px;margin-top:${18*u}px">${esc(P('l2')||'')}</div></div>`;
+  S.querySelector('.hrt svg').style.stroke='#e5484d';
+  render=t=>{const o=1-outT(t);['c1','c2','c3','c4'].forEach((id,i)=>{const e=document.getElementById(id);const k=eo(seg(t,.1+i*.18,.45+i*.18));e.style.opacity=k*o;e.style.transform=`translateY(${(1-k)*24}px) scale(${id==='c2'?.75+.25*back(k):1})`});
+   const h=S.querySelector('.hrt svg');if(t>1.3){h.style.fill='#e5484d';h.style.transform=`scale(${1+.25*Math.max(0,1-(t-1.3)*4)})`}};
+ }
+ else if(TYPE==='band'){ // studio hook: dark band at the seam, l1 in bright green heavy type, l2 thin italic white (ref 7)
+  const y=(+P('y')||.45)*H, bh=(+P('bh')||.13)*H;
+  S.innerHTML=`<div class="abs" id="bd" style="left:0;right:0;top:${y-bh/2}px;height:${bh}px;background:${P('band')||'rgba(8,8,10,.92)'};display:flex;flex-direction:column;align-items:center;justify-content:center;border-top:2px solid rgba(255,255,255,.85);border-bottom:2px solid rgba(255,255,255,.85)">
+   <div id="b1" style="font-family:Blk;font-size:${bh*.36}px;letter-spacing:-.03em;color:${P('c1')||'#3BEA5C'};white-space:nowrap;line-height:1.05">${esc(P('l1'))}</div>
+   <div id="b2" style="font-family:Pop;font-style:italic;font-weight:300;font-size:${bh*.27}px;letter-spacing:-.02em;color:#fff;white-space:nowrap;line-height:1.1">${esc(P('l2'))}</div></div>`;
+  const fit=e=>{const s=Math.min(1,W*.94/e.scrollWidth);e.style.transform=`scale(${s})`};fit(document.getElementById('b1'));fit(document.getElementById('b2'));
+  render=t=>{const o=1-outT(t),k=eo(seg(t,0,.3));const b=document.getElementById('bd');b.style.opacity=o;b.style.clipPath=`inset(0 ${(1-k)*50}% 0 ${(1-k)*50}%)`;
+   ['b1','b2'].forEach((id,i)=>{const e=document.getElementById(id);const q=eo(seg(t,.15+i*.12,.45+i*.12));e.style.opacity=q;e.style.translate=`0 ${(1-q)*12}px`})};
+ }
+ else if(TYPE==='bignum'){ // studio list: giant slanted lime number on the left of a full-screen B-roll (ref 7)
+  const fs=(+P('size')||.22)*H;
+  S.innerHTML=`<div class="abs" id="bn" style="left:${(+P('x')||.04)*W}px;top:${(+P('y')||.5)*H-fs*.55}px;font-family:Blk;font-size:${fs}px;line-height:1;color:${P('color')||'#D7FF3A'};transform:skewX(-10deg);text-shadow:0 ${fs*.03}px ${fs*.08}px rgba(0,0,0,.35)">${esc(P('n')||'1')}</div>`;
+  render=t=>{const o=1-outT(t),k=seg(t,0,.28);const e=document.getElementById('bn');e.style.opacity=Math.min(1,k*2.5)*o;
+   e.style.transform=`translateX(${(1-eo(k))*-W*.25}px) skewX(-10deg) scale(${1+.25*(1-back(k,1.2))})`;e.style.filter=`blur(${(1-k)*14}px)`};
+ }
+ else if(TYPE==='ctaword'){ // studio CTA: small "Comment" + big quoted serif keyword with a blue glow (ref 7)
+  const w=P('word')||'Guide', fs=(+P('size')||.085)*H, gl=P('glow')||'rgba(40,140,255,.75)';
+  S.innerHTML=`<div class="abs" id="cw" style="left:0;right:0;top:${(+P('y')||.6)*H-fs*.8}px;text-align:center">
+   <div id="w1" style="font-family:Pop;font-weight:500;font-size:${fs*.34}px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6)">${esc(P('l1')||'Comment')}</div>
+   <div id="w2" style="display:inline-block;font-family:DMS;font-size:${fs}px;line-height:1.1;white-space:nowrap;background:linear-gradient(180deg,${P('c1')||'#9BE3FF'},${P('c2')||'#1D6BFF'});-webkit-background-clip:text;background-clip:text;color:transparent">&ldquo;${esc(w)}&rdquo;</div></div>`;
+  const e2=document.getElementById('w2');const s=Math.min(1,W*.92/e2.scrollWidth);
+  render=t=>{const o=1-outT(t),k=seg(t,.1,.45);document.getElementById('w1').style.opacity=eo(seg(t,0,.25))*o;
+   e2.style.opacity=Math.min(1,k*2)*o;e2.style.transform=`scale(${s*(1.6-.6*eo(k))})`;e2.style.filter=`blur(${(1-k)*10}px) drop-shadow(0 0 ${fs*.12}px ${gl})`};
+ }
+ else if(TYPE==='endcard'){ // studio end card: black screen, serif lines, one highlighted line, round icon (ref 7)
+  const L=P('lines').split('|'), hl=+P('hl')||-1, ic=await icon(P('icon')||'message-circle',H*.07);
+  S.innerHTML=`<div class="abs" style="inset:0;background:${P('bg')||'#000'}"></div><div class="abs" style="left:${W*.1}px;right:${W*.1}px;top:${H*.3}px;text-align:center;font-family:DMS;color:#fff">
+   ${L.map((l,i)=>`<div class="el" style="font-size:${(i+1===hl?.034:.026)*H}px;line-height:1.3;color:${i+1===hl?(P('hc')||'#FFD43B'):'#fff'}">${esc(l)}</div>`).join('')}
+   <div class="el ic" style="margin-top:${H*.06}px;display:inline-flex;width:${H*.13}px;height:${H*.13}px;border-radius:50%;background:${P('ic')||'#25D366'};align-items:center;justify-content:center">${ic}</div></div>`;
+  S.querySelectorAll('svg').forEach(e=>e.style.stroke='#fff');
+  render=t=>{const o=1-outT(t);S.querySelectorAll('.el').forEach((e,i)=>{const k=eo(seg(t,.1+i*.12,.45+i*.12));e.style.opacity=k*o;
+   e.style.transform=`translateY(${(1-k)*16}px) scale(${e.classList.contains('ic')?.6+.4*back(k):1})`})};
+ }
+ else if(TYPE==='device'){ // studio B-roll stand-in: phone / tablet / laptop mock-up on a soft warm backdrop, slow push-in.
+  // img = a screenshot of the real thing (best); without it a simple app screen is drawn from head/sub/label/value/rows.
+  const kind=P('kind')||'phone', ar=kind==='phone'?2.05:kind==='tablet'?1.33:.64, dw=Math.min((kind==='phone'?W*.62:kind==='tablet'?W*.86:W*.94)*(P('dx')?.86:1),H*(+P('maxh')||.86)/ar), dh=dw*ar;
+  const rows=(P('rows')||'').split('|').filter(Boolean).map(r=>r.split(':')), ac=P('acc')||'#169C55';
+  const scr=P('img')?`<img src="${P('img')}" style="width:100%;height:100%;object-fit:${P('fit')||'cover'};object-position:top;background:#111">`:
+   `<div style="padding:${dw*.07}px;font-family:Pop;color:#1d2230;background:#fff;height:100%;box-sizing:border-box">
+     <div style="font-weight:700;font-size:${dw*.065}px;text-align:center;margin-top:${kind==='phone'?dw*.12:dw*.02}px">${esc(P('head')||'Monthly budget')}</div>
+     <div style="font-size:${dw*.04}px;opacity:.55;text-align:center">${esc(P('sub')||'')}</div>
+     <div style="margin-top:${dw*.06}px;background:${P('tint')||'#E8F6EE'};border-radius:${dw*.04}px;padding:${dw*.05}px">
+       <div style="font-size:${dw*.04}px;opacity:.6">${esc(P('label')||'Total')}</div><div style="font-weight:800;font-size:${dw*.11}px;color:${ac}">${esc(P('value')||'')}</div>
+       <div style="height:${dw*.03}px;border-radius:99px;background:rgba(0,0,0,.08);margin-top:${dw*.03}px"><div id="db" style="height:100%;width:0;border-radius:99px;background:${ac}"></div></div></div>
+     ${rows.map(r=>`<div class="dr" style="display:flex;justify-content:space-between;margin-top:${dw*.045}px;padding-bottom:${dw*.03}px;border-bottom:1px solid #eee;font-size:${dw*.05}px"><span>${esc(r[0])}</span><b>${esc(r[1]||'')}</b></div>`).join('')}</div>`;
+  const frame=kind==='laptop'?`border:${dw*.022}px solid #1b1c20;border-bottom-width:${dw*.05}px;border-radius:${dw*.03}px`:`border:${dw*.03}px solid #16171b;border-radius:${dw*(kind==='phone'?.13:.06)}px`;
+  const cur=P('cursor')?await icon('mouse-pointer-2',W*.09):'';
+  S.innerHTML=`<div class="abs" style="inset:0;background:${P('bg')||'radial-gradient(120% 80% at 70% 20%,#F3E6D3 0%,#D9C3A5 45%,#8C7358 100%)'}"></div>
+   ${P('bgimg')?`<img class="abs" src="${P('bgimg')}" style="inset:0;width:100%;height:100%;object-fit:cover;filter:blur(18px) brightness(.85)">`:''}
+   <div class="abs" id="dev" style="left:${Math.min((W-dw)/2+(+P('dx')||0)*W,W*.985-dw)}px;top:${(+P('cy')||.5)*H-dh/2}px;width:${dw}px;height:${dh}px;box-sizing:border-box;${frame};overflow:hidden;background:#fff;box-shadow:0 ${H*.03}px ${H*.06}px rgba(40,25,10,.45)">${scr}</div>
+   ${cur?`<div class="abs" id="cur" style="line-height:0">${cur}</div>`:''}`;
+  const c=S.querySelector('#cur svg');if(c){c.style.fill='#fff';c.style.stroke='#111'}
+  render=t=>{const o=1-outT(t),k=eo(seg(t,0,.45)),z=1+.08*seg(t,0,DUR);const d=document.getElementById('dev');
+   d.style.opacity=Math.min(1,k*1.5)*o;d.style.transform=`translateY(${(1-k)*H*.08}px) scale(${z}) rotate(${(+P('tilt')||-3)*(1-.5*seg(t,0,DUR))}deg)`;
+   const b=document.getElementById('db');if(b)b.style.width=(eo(seg(t,.5,1.4))*(+P('pct')||68))+'%';
+   S.querySelectorAll('.dr').forEach((e,i)=>{const q=eo(seg(t,.6+i*.2,.9+i*.2));e.style.opacity=q;e.style.transform=`translateX(${(1-q)*30}px)`});
+   const cu=document.getElementById('cur');if(cu){const q=eo(seg(t,DUR*.35,DUR*.6));cu.style.left=(W*.85-q*W*.3)+'px';cu.style.top=(H*.8-q*H*.25)+'px';cu.style.opacity=Math.min(1,seg(t,DUR*.3,DUR*.4))*o;
+    cu.style.transform=`scale(${t>DUR*.62&&t<DUR*.7?.8:1})`}};
+ }
+ else if(TYPE==='presenter'){ // flat illustrated presenter for the style gallery (no real person, no photo). room warm|plain|green
+  const room=P('room')||'warm', wall=P('wall')||(room==='warm'?'#9A4B32':room==='green'?'#2FA84F':'#E9E4DA');
+  const skin=P('skin')||'#C98B62', hair=P('hair')||'#2A1E1A', shirt=P('shirt')||'#7A2E35', cx=W*(+P('fx')||.5);
+  const s=Math.min(W,H*.56)/1080; // character scale
+  const bricks=room==='warm'?Array.from({length:Math.ceil(H/70)},(_,r)=>Array.from({length:Math.ceil(W/150)+1},(_,c)=>
+    `<rect x="${c*150-(r%2)*75+4}" y="${r*70+4}" width="142" height="62" rx="6" fill="${['#A3533A','#8F4430','#9C4C35'][(r*3+c)%3]}"/>`).join('')).join(''):'';
+  const lamp=room==='warm'?`<g transform="translate(${W*.86},${H*.36})"><ellipse cx="0" cy="0" rx="${150*s}" ry="${110*s}" fill="#FFE2A8" opacity=".9"/>
+    <circle cx="0" cy="0" r="${320*s}" fill="url(#glow)"/><rect x="${-12*s}" y="${100*s}" width="${24*s}" height="${700*s}" fill="#3a2a20"/></g>`:'';
+  const plant=room!=='green'?`<g transform="translate(${W*.12},${H*.62})"><rect x="${-60*s}" y="${60*s}" width="${120*s}" height="${140*s}" rx="${14*s}" fill="#D9CBB4"/>
+    ${[-50,-20,10,40].map((a,i)=>`<ellipse cx="${a*s}" cy="${(-30-i%2*40)*s}" rx="${30*s}" ry="${90*s}" transform="rotate(${a/2} ${a*s} ${-30*s})" fill="${i%2?'#4E8F45':'#5FA552'}"/>`).join('')}</g>`:'';
+  const py=H*(+P('fy')||.42); // head centre
+  S.innerHTML=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="position:absolute;inset:0">
+   <defs><radialGradient id="glow"><stop offset="0" stop-color="#FFD58A" stop-opacity=".55"/><stop offset="1" stop-color="#FFD58A" stop-opacity="0"/></radialGradient>
+    <radialGradient id="vig" cx=".5" cy=".45" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="${room==='warm'?.45:.15}"/></radialGradient></defs>
+   <rect width="${W}" height="${H}" fill="${wall}"/>${bricks}${lamp}${plant}
+   <g transform="translate(${cx},${py}) scale(${s})">
+    <path d="M-440 1500 L-420 980 C-400 520 -250 430 0 420 C250 430 400 520 420 980 L440 1500 Z" fill="${shirt}"/>
+    <path d="M-90 400 L0 520 L90 400 Z" fill="${skin}"/><rect x="-70" y="280" width="140" height="160" rx="40" fill="${skin}"/>
+    <ellipse cx="0" cy="80" rx="190" ry="230" fill="${skin}"/>
+    <ellipse cx="-188" cy="100" rx="34" ry="56" fill="${skin}"/><ellipse cx="188" cy="100" rx="34" ry="56" fill="${skin}"/>
+    <path d="M-200 40 C-220 -170 -60 -210 20 -200 C160 -195 230 -110 205 40 C190 -40 140 -90 40 -95 C-60 -92 -150 -70 -200 40 Z" fill="${hair}"/>
+    <ellipse cx="-70" cy="70" rx="20" ry="26" fill="#2a1d18"/><ellipse cx="70" cy="70" rx="20" ry="26" fill="#2a1d18"/>
+    <path d="M-115 20 Q-70 0 -30 18" stroke="${hair}" stroke-width="14" fill="none" stroke-linecap="round"/><path d="M30 18 Q70 0 115 20" stroke="${hair}" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <path d="M-10 90 Q0 150 -25 160" stroke="#9c6446" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M-70 210 Q0 265 70 210 Q0 240 -70 210 Z" fill="#7a2f2a" stroke="#7a2f2a" stroke-width="10" stroke-linejoin="round"/>
+    <g transform="translate(150,560) rotate(-20)"><rect x="-30" y="-120" width="60" height="150" rx="30" fill="#1d1d22"/><rect x="-8" y="30" width="16" height="260" fill="#1d1d22"/></g>
+   </g><rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
+  render=t=>{};
+ }
+ else if(TYPE==='wipe'){ // transition: accent + white diagonal bars sweep across (use dur ~0.45)
+  S.innerHTML=`<div id="b1" class="abs" style="top:-50%;height:200%;width:${W*.35}px;background:var(--acc);transform:skewX(-18deg)"></div>
+   <div id="b2" class="abs" style="top:-50%;height:200%;width:${W*.08}px;background:#fff;transform:skewX(-18deg)"></div>`;
+  render=t=>{const k=seg(t,0,DUR);const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+   document.getElementById('b1').style.left=(-W*.6+e*W*1.9)+'px';document.getElementById('b2').style.left=(-W*.75+e*W*2.1)+'px'};
+ }
+ // step header (style ref 2): "STEP 03 / 07" label, progress dots, big faded number behind the card
+ if(P('step')){const [n,tot]=P('step').split('/').map(x=>+x);const pad=v=>String(v).padStart(2,'0');
+  const hd=document.createElement('div');hd.className='abs';hd.style.cssText=`left:${50*u}px;right:${50*u}px;top:${34*u}px;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:${22*u}px;letter-spacing:.08em;color:var(--ink);opacity:.75`;
+  hd.innerHTML=`<span>STEP ${pad(n)} / ${pad(tot)}</span><span>${Array.from({length:tot},(_,i)=>`<i style="display:inline-block;width:${11*u}px;height:${11*u}px;border-radius:50%;margin-left:${6*u}px;background:${i<n?'var(--acc)':'var(--line)'}"></i>`).join('')}</span>`;
+  const big=document.createElement('div');big.className='abs';big.style.cssText=`right:${30*u}px;top:${H*.12}px;font-weight:800;font-size:${H*.55}px;line-height:1;color:var(--ink);opacity:.05`;big.textContent=n;
+  S.prepend(big);S.appendChild(hd);const r0=render;render=t=>{r0(t);const k=eo(seg(t,0,.4));hd.style.opacity=.75*k*(1-outT(t));big.style.opacity=.05*k*(1-outT(t));big.style.transform=`translateY(${(1-k)*40}px)`;};}
+ await document.fonts.ready; render(0); window.READY=true;
+}
+window.render=t=>render(t); window.DUR=DUR; build();
+</script></body></html>

@@ -1,0 +1,4 @@
+{
+ "background_swap": "keyable_only",
+ "_note": "keyable_only = offer the swap only when the analysis finds a green/blue screen or a plain wall far from skin colour (ffmpeg key, ~10 s). 'all' = also offer the slow AI matte for other walls (~11-20 min per minute). false = never."
+}

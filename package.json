@@ -1,0 +1,12 @@
+{
+  "name": "pro-video-editor",
+  "version": "1.4.0",
+  "private": true,
+  "description": "Professional video editing skill: auto style, clean voice, motion graphics, captions, music.",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "playwright-core": "1.63.0",
+    "three": "^0.170.0"
+  }
+}

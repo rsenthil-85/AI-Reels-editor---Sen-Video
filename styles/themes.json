@@ -1,0 +1,32 @@
+{
+  "paper": {
+    "label": "Clean Paper",
+    "looks_like": "Nate Herk, Vaibhav Sisinty",
+    "theme": "paper", "panel_base": "#F4F2EC", "panel_bg_style": "paper", "accent": "#FFE45C",
+    "note": "off-white paper panels, black text, blue buttons, yellow highlighter"
+  },
+  "highlight": {
+    "label": "Highlighter Yellow",
+    "looks_like": "Liam Ottley, AI Master",
+    "theme": "highlight", "panel_base": "#FBFAF6", "panel_bg_style": "dots", "accent": "#F2C524",
+    "note": "white dotted panels, yellow accents, energetic"
+  },
+  "navy": {
+    "label": "Navy & Gold",
+    "looks_like": "Mark Tilbury",
+    "theme": "navy", "panel_base": "#16233F", "panel_bg_style": "paper", "accent": "#E9B949",
+    "note": "navy panels, gold accents, premium money feel"
+  },
+  "mint": {
+    "label": "Mint Fresh",
+    "looks_like": "Symone B. Tech, Notion style",
+    "theme": "mint", "panel_base": "#F7F7F5", "panel_bg_style": "dots", "accent": "#16A34A",
+    "note": "white dotted panels, green accents, clean tech"
+  },
+  "dark": {
+    "label": "Dark Glow",
+    "looks_like": "Patrick Dang",
+    "theme": "dark", "panel_base": "#0D0E14", "panel_bg_style": "aurora", "accent": "#E8603C",
+    "note": "dark panels, orange glow. Reads as AI-made to many viewers - offer only if asked"
+  }
+}
