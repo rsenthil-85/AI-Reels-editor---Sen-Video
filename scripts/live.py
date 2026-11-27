@@ -172,7 +172,10 @@ def main():
     ED = edit_dir_of(a[0]); os.makedirs(ED, exist_ok=True)
     SRC = a[0] if os.path.isfile(a[0]) else None
     port = int(a[a.index("--port") + 1]) if "--port" in a else 8765
-    srv = ThreadingHTTPServer(("127.0.0.1", port), H)
+    for _ in range(20):   # an earlier edit's page may still hold the port: take the next free one
+        try: srv = ThreadingHTTPServer(("127.0.0.1", port), H); break
+        except OSError: port += 1
+    else: print("  no free port for the edit page"); sys.exit(1)
     print(f"  live edit page: http://127.0.0.1:{port}   (edit folder {ED})", flush=True)
     srv.serve_forever()
 

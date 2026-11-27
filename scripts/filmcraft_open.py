@@ -185,4 +185,10 @@ def main():
     LL.step(ED, "filmcraft", "done", f"open in FilmCraft for your touch-ups (built in {time.time() - t0:.0f} s)", filmcraft_project=proj)
 
 if __name__ == "__main__":
-    main()
+    try: main()
+    except (ConnectionError, OSError, json.JSONDecodeError) as e:   # FilmCraft closed or crashed mid-build
+        a_ = sys.argv[1:]; p_ = os.path.abspath(a_[0]) if a_ else ""
+        ed = p_ if os.path.isdir(p_) else os.path.join(os.path.dirname(p_), os.path.splitext(os.path.basename(p_))[0] + "_edit")
+        LL.step(ed, "filmcraft", "done", "FilmCraft closed before it finished - press Open in FilmCraft again")
+        print(f"  FilmCraft closed before the edit was finished ({type(e).__name__}); the reel itself is fine. Run again to retry.")
+        sys.exit(3)
