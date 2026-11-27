@@ -109,7 +109,8 @@ class H(BaseHTTPRequestHandler):
                   "describe": str(body.get("describe", ""))[:600],
                   "length": body.get("length") if body.get("length") in ("full", "60", "30") else "full",
                   "extras": [x for x in body.get("extras", []) if x in ("music", "zooms", "stickers", "checklist", "motion_bg", "bg_replace")],
-                  "finish": "filmcraft" if body.get("finish") == "filmcraft" else "auto", "t": time.time()}
+                  "finish": "filmcraft" if body.get("finish") == "filmcraft" else "auto",
+                  "materials": str(body.get("materials", ""))[:2000], "t": time.time()}
             json.dump(ch, open(os.path.join(ED, "choice.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
             lbl = "your own description" if ch["style"] == "describe" else styles[ch["style"]]["label"]
             LL.step(ED, "style", "doing", f"{lbl} - planning the graphics" + (", then FilmCraft" if ch["finish"] == "filmcraft" else ""))

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.10.0 - 2026-11-28
+- Two new styles: **AI News** (face bubble over full-screen screenshots that zoom to the key line with a marker
+  highlight, Breaking/New badges) and **Screen tutorial** (screen recording auto-zoomed to clicks and typing,
+  face bubble, step badges). Both on the edit page, which asks for the screenshots / screen recording.
+- New graphics: `shot` (screenshot + zoom to a focus box + marker) and `badge` (pill label with optional icon).
+- `scripts/screen_zoom.py`: free, local auto-zoom for screen recordings (frame differences -> held zoom regions ->
+  ffmpeg sendcmd crop), vertical output with a blurred full-screen backdrop.
+- Face bubble (reels and long-form) is now cropped around the face, not the centre of the frame.
+
 ## 1.9.2 - 2026-11-27 (green screen)
 - Flat digital green/blue screens (e.g. Canva background remover) count as swappable even with greenish clothes, and use a
   tight RGB colour key (similarity 0.06) instead of chromakey, which left the person partly see-through.

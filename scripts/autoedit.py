@@ -127,6 +127,8 @@ def main():
     plan["_style_graphics"] = sty["graphics"]
     if sty.get("split_style"): plan["split_style"] = sty["split_style"]
     if sty["layout"] == "face": plan["caption_fs"] = 92          # face only: captions carry the screen, make them bigger
+    if sty["layout"] == "tutorial": plan["caption_y"] = 0.655           # between the zoomed screen (top 4-62%) and the face bubble
+    if sty.get("needs"): plan["_todo"].append(f"{sty['needs']}: use the files the user named (choice.json materials); ask if none")
     if sty.get("accent"): plan["accent"] = sty["accent"]
     if not sty["transitions"]: plan["transitions"] = False
     if "motion_bg" in ex and sty["layout"] != "studio": plan["panel_bg"] = "auto:" + th["panel_bg_style"]

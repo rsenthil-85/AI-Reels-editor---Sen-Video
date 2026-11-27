@@ -45,6 +45,7 @@ live.py serves templates/live.html the whole time; every step writes progress th
 | Sound | `scripts/sfx_design.py`, `scripts/music.py`, `scripts/make_sfx.py` | sound effects from the plan, synthesised music beds, synthesised SFX pack |
 | Edit page | `scripts/live.py`, `scripts/livelog.py`, `templates/live.html` | local server (127.0.0.1) for choosing and watching |
 | FilmCraft | `scripts/filmcraft_open.py` | builds the edit on FilmCraft's timeline through its JSON control channel |
+| Screen zoom | `scripts/screen_zoom.py` | auto-zoom a screen recording to clicks / typing, vertical output (Screen tutorial style) |
 | Gallery | `scripts/make_gallery.py` | style/look preview images (illustrated presenter) |
 | Reference study | `scripts/learn_style.py` | downloads/reads a reference reel: contact sheet, cuts per minute, music level, SFX hits |
 
@@ -53,7 +54,8 @@ Key data files (all inside `<video name>_edit/` next to the video):
 `plan.json` (the full edit: inserts, overlays, captions, music, grade...; schema at the top of `compose.py`),
 `live.json` (progress), `work_compose/` (renders, args_*.json with the exact ffmpeg commands).
 
-Styles: `styles/edit_styles.json` (Clean cards = `mixed`, Bold B-roll = `studio`, Face and captions = `simple`),
+Styles: `styles/edit_styles.json` (Clean cards = `mixed`, Bold B-roll = `studio`, Face and captions = `simple`,
+AI News = `news`, Screen tutorial = `tutorial`),
 `styles/themes.json` (colour looks), `styles/presets.json` (per content type).
 
 ## Run it without Claude
@@ -129,7 +131,7 @@ Claude-specific tools in `SKILL.md` and their plain equivalents:
 
 Version: see `CHANGELOG.md` (1.9.2 at the time of writing).
 
-Done: three styles + describe-your-own, edit page with live progress and FilmCraft panel, retake and filler
+Done: five styles (Clean cards, Bold B-roll, Face and captions, AI News, Screen tutorial) + describe-your-own, edit page with live progress and FilmCraft panel, retake and filler
 cutting, clean voice, five caption styles, graphics library (title, chapter, lower, counter, prompt, diagram,
 checklist, sticker, band, bignum, device, ctaword, endcard, comment, step header), music + SFX, green-screen
 swap with fringe fix, FilmCraft hand-off, render 44% faster than v1.8, README with screenshots.

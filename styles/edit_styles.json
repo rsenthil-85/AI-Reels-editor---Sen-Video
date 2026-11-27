@@ -36,5 +36,31 @@
   "uses_look": true,
   "graphics": "title on frame 1; one or two chapter word cards; counter for numbers; nothing else",
   "tagline": "Your face all the way, zoom-ins, word-highlight captions"
+ },
+ "news": {
+  "label": "AI News",
+  "tagline": "You over the headline: screenshots zoom in, key lines highlighted",
+  "question": "Your face in a bubble over full-screen screenshots of the news (articles, posts, product pages). Each screenshot zooms to the key line and a marker highlights it. A Breaking / New label, punchy captions.",
+  "learned_from": "green-screen reaction / AI news format (research 2026-11-28)",
+  "layout": "news",
+  "caption": "bold",
+  "grade": true,
+  "transitions": false,
+  "uses_look": true,
+  "needs": "screenshots",
+  "graphics": "first 2-3 s: your face full frame with a badge (type badge, text New or Breaking); then for every screenshot an insert mode bubble with gfx {type: shot, img, focus: 'x,y,w,h' of the key line as fractions of the image} for as long as you talk about it (face bubble bottom-left); back to the face for your opinion; comment CTA at the end"
+ },
+ "tutorial": {
+  "label": "Screen tutorial",
+  "tagline": "Your screen recording zooms to each click, your face in a bubble",
+  "question": "Your screen recording fills the screen and zooms to wherever you click or type, your face in a bubble in the corner, step badges and the prompt you typed shown clearly. Face full screen for the intro and the result.",
+  "learned_from": "AI tool tutorial format (FocuSee / Tella / Trupeer style auto-zoom; research 2026-11-28)",
+  "layout": "tutorial",
+  "caption": "minimal",
+  "grade": true,
+  "transitions": false,
+  "uses_look": true,
+  "needs": "screen_recording",
+  "graphics": "intro on the face; run scripts/screen_zoom.py on the screen recording (--top 0.04 --area 0.58) and use it as an insert mode bubble with src screen_vertical.mp4 (ss to line it up with what you say); badge overlays 'Step n of m' (tone blue) at each step; a prompt graphic when a prompt is read out; result on the face"
  }
 }

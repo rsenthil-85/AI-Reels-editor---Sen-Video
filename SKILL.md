@@ -12,7 +12,7 @@ description: >-
 
 # pro-video-editor
 
-Version 1.9.2 - see CHANGELOG.md. How it works, what was measured and why: `references/engineering-notes.md`
+Version 1.10.0 - see CHANGELOG.md. How it works, what was measured and why: `references/engineering-notes.md`
 (read it before changing the pipeline). Recording advice for users: `references/recording-guide.md`.
 
 Every video goes: **gallery + style question (instant, analysis runs behind it) -> short brief -> edit -> stills -> final**.
@@ -162,6 +162,21 @@ was not verified. End with **ship it, or change it?**
   (references: bed ~3-6 dB under voice peaks, 7-76 SFX hits/min).
 - New reference from the user: `scripts/learn_style.py <url>` -> contact sheet, cuts, captions, audio stats;
   write the findings into references/style-refs.md, then build what is missing.
+
+## AI News style (news) - how to build it
+Needs screenshots (choice.json `materials`: file paths or a folder). Your face full frame with
+`{"type":"badge","text":"New"}` for 2-3 s, then for each screenshot an insert `mode: bubble` with
+`{"type":"shot","img":"<path>","focus":"x,y,w,h"}` (the key line as fractions of the image: LOOK at the screenshot to
+find it; `tz` = when the zoom starts) for as long as the speaker talks about it; opinion on the face; comment card.
+The bubble is cropped around the face (auto face framing). Green screen: add the swap, it also shows in the bubble.
+
+## Screen tutorial style (tutorial) - how to build it
+Needs a screen recording (choice.json `materials`). Run
+`PY S/screen_zoom.py <screen.mp4> <name>_edit/screen_vertical.mp4 --top 0.04 --area 0.58` (finds clicks / typing by
+comparing frames, holds a zoom on that area; ~10 s for 20 s), then an insert `mode: bubble` with
+`"src": "screen_vertical.mp4"` and `"ss"` to line it up with what is said. Badges
+`{"type":"badge","text":"Step 1 of 3: ...","tone":"blue","dot":"0"}` at each step; intro and result on the face.
+Captions sit at 0.655 between the screen and the bubble.
 
 ## Bold B-roll style (studio) - how to build it (ref 7, references/style-refs.md)
 

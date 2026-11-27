@@ -375,7 +375,9 @@ def main():
                 from PIL import Image, ImageDraw
                 im = Image.new("L", (bw, bh), 0); ImageDraw.Draw(im).rounded_rectangle([0, 0, bw - 1, bh - 1], radius=int(bh * 0.12), fill=255); im.save(mask)
                 k = add_input(mask, d=dur)
-                f.append(f"[bb]scale={bw}:{bh}:force_original_aspect_ratio=increase,crop={bw}:{bh}[bf];[{k}:v]format=gray,scale={bw}:{bh}[bm];[bf][bm]alphamerge[bub]")
+                cw_ = int(W * 0.62) // 2 * 2; ch_ = int(cw_ * bh / bw) // 2 * 2       # crop around the FACE (auto face framing), not the centre
+                cx_ = int(min(max(fx * W - cw_ / 2, 0), W - cw_)) // 2 * 2; cy_ = int(min(max(fy * H - ch_ * 0.42, 0), H - ch_)) // 2 * 2
+                f.append(f"[bb]crop={cw_}:{ch_}:{cx_}:{cy_},scale={bw}:{bh}[bf];[{k}:v]format=gray,scale={bw}:{bh}[bm];[bf][bm]alphamerge[bub]")
                 m = int(W * 0.025)
                 f.append(f"[{cur}][bub]overlay={m}:H-h-{m}:enable='{en([(b['t0'], b['t1']) for b in bubbles])}'[vb]"); cur = "vb"
             else:

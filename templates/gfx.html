@@ -235,6 +235,37 @@ async function build(){
    </g><rect width="${W}" height="${H}" fill="url(#vig)"/></svg>`;
   render=t=>{};
  }
+ else if(TYPE==='shot'){ // AI News / tutorial: a screenshot (img) fills the frame, zooms to the key part, then a marker box draws over it.
+  // focus = "x,y,w,h" fractions of the image; tz = zoom start (s); hl = 0 to skip the marker; under = blurred copy behind
+  const f=(P('focus')||'').split(',').map(Number), hasF=f.length===4&&f.every(v=>!isNaN(v)), tz=+P('tz')||0.7, img=P('img');
+  S.innerHTML=`<img class="abs" id="sbg" src="${img}" style="inset:0;width:100%;height:100%;object-fit:cover;filter:blur(28px) brightness(.55) saturate(1.1);transform:scale(1.15)">
+   <div class="abs" id="stage" style="left:0;top:0;transform-origin:0 0"><img id="simg" src="${img}" style="display:block;border-radius:${W*.02}px;box-shadow:0 ${H*.02}px ${H*.05}px rgba(0,0,0,.45)">
+   <div id="mk" style="position:absolute;border:${W*.006}px solid ${P('mc')||'#FFE45C'};background:${P('mf')||'rgba(255,228,92,.28)'};border-radius:${W*.012}px;opacity:0"></div></div>`;
+  const im=document.getElementById('simg'); await new Promise(r=>{if(im.complete&&im.naturalWidth)r();else{im.onload=r;im.onerror=r}});
+  const iw=im.naturalWidth||1000, ih=im.naturalHeight||1000, top=(+P('top')||.08)*H, availH=H*(+P('area')||.62);
+  const s0=Math.min(W*.92/iw, availH/ih); im.style.width=iw*s0+'px'; im.style.height=ih*s0+'px';
+  const x0=(W-iw*s0)/2, y0=top+(availH-ih*s0)/2;
+  let s1=s0,x1=x0,y1=y0;
+  if(hasF){const fw=f[2]*iw, fh=f[3]*ih; s1=Math.min(W*.9/fw, availH*.9/fh, s0*3.2); s1=Math.max(s1,s0);
+   x1=W/2-(f[0]*iw+fw/2)*s1; y1=top+availH/2-(f[1]*ih+fh/2)*s1;
+   const mk=document.getElementById('mk'); mk.style.left=(f[0]*iw*s0-W*.01)+'px'; mk.style.top=(f[1]*ih*s0-W*.01)+'px';
+   mk.style.width=(f[2]*iw*s0+W*.02)+'px'; mk.style.height=(f[3]*ih*s0+W*.02)+'px';}
+  const st=document.getElementById('stage');
+  render=t=>{const o=1-outT(t),k=eo(seg(t,0,.35)),z=hasF?eo(seg(t,tz,tz+.7)):0;
+   const sc=(s0+(s1-s0)*z)/s0; st.style.transform=`translate(${x0+(x1-x0)*z}px,${y0+(y1-y0)*z+(1-k)*H*.04}px) scale(${sc})`;
+   st.style.opacity=Math.min(1,k*1.4)*o; document.getElementById('sbg').style.opacity=o;
+   if(hasF&&P('hl')!=='0'){const m=document.getElementById('mk'),q=seg(t,tz+.75,tz+1.15);m.style.opacity=q>0?1:0;m.style.clipPath=`inset(0 ${(1-eo(q))*100}% 0 0)`}};
+ }
+ else if(TYPE==='badge'){ // small label pill at the top: "Breaking", "New", "Step 2 of 4". tone red|yellow|blue|green
+  const tone=P('tone')||'red', C={red:['#E5484D','#fff'],yellow:['#FFE45C','#16181D'],blue:['#2F6FED','#fff'],green:['#16A34A','#fff'],dark:['#16181D','#fff']}[tone]||['#E5484D','#fff'];
+  const fs=(+P('size')||.026)*H, y=(+P('y')||.035)*H, ic=P('icon')?await icon(P('icon'),fs*1.1):'';
+  S.innerHTML=`<div class="abs" id="bdg" style="left:${(+P('x')||.5)*W}px;top:${y}px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:${fs*.4}px;
+   background:${C[0]};color:${C[1]};font-weight:800;font-size:${fs}px;padding:${fs*.32}px ${fs*.7}px;border-radius:999px;letter-spacing:.02em;white-space:nowrap;box-shadow:0 ${fs*.2}px ${fs*.6}px rgba(0,0,0,.3)">
+   ${P('dot')==='0'?'':`<span id="bdot" style="width:${fs*.45}px;height:${fs*.45}px;border-radius:50%;background:${C[1]};display:inline-block"></span>`}${ic}<span>${esc(P('text')||'Breaking')}</span></div>`;
+  S.querySelectorAll('#bdg svg').forEach(e=>e.style.stroke=C[1]);
+  render=t=>{const o=1-outT(t),k=seg(t,0,.3),e=document.getElementById('bdg');e.style.opacity=Math.min(1,k*2)*o;e.style.transform=`translateX(-50%) translateY(${(1-back(k))*-fs*2}px)`;
+   const d=document.getElementById('bdot');if(d)d.style.opacity=.45+.55*Math.abs(Math.sin(t*3.2))};
+ }
  else if(TYPE==='wipe'){ // transition: accent + white diagonal bars sweep across (use dur ~0.45)
   S.innerHTML=`<div id="b1" class="abs" style="top:-50%;height:200%;width:${W*.35}px;background:var(--acc);transform:skewX(-18deg)"></div>
    <div id="b2" class="abs" style="top:-50%;height:200%;width:${W*.08}px;background:#fff;transform:skewX(-18deg)"></div>`;
