@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.12.4 - 2026-11-28
+- The editor opens in the browser in every session, with any assistant: AGENTS.md, CLAUDE.md and GEMINI.md start
+  with "run start.ps1 -Detached", and Claude Code runs it itself at session start (`.claude/settings.json`).
+- `start.ps1 -Detached` runs the editor in its own window (it keeps running after the assistant's command ends),
+  reuses this folder's editor if it is already open (0.8 s check), and shows a "getting ready" page at once that
+  switches to the editor by itself (measured 10 s from start).
+- Fix: the start screen did not serve the skill's own pictures.
+
 ## 1.12.3 - 2026-11-28
 - `start.bat` / `start.ps1`: double-click to open the edit page from any setup; installs into the folder on first run.
 - `live.py --open` opens the browser through Windows itself and always prints the link (Codex could not open it).

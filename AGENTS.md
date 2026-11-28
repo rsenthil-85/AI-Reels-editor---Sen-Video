@@ -5,13 +5,27 @@ Gemini CLI), Cursor, Copilot, Windsurf, Aider, or a local model. It says what we
 how to run and test them, and the rules. `SKILL.md` is the step-by-step workflow Claude Code follows when it edits
 a video; this file is the map for anyone changing or extending the code.
 
+## FIRST, in every session in this folder: open the editor in the user's browser
+
+Most users are not technical. Before answering anything else, run this once (it returns at once):
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File start.ps1 -Detached
+```
+
+It opens the browser on the editor (or on a "getting ready" page that switches to the editor by itself), installs
+on the first run in its own window, and reuses the editor if this folder's copy is already running. Then tell the
+user in one line: "The editor is open in your browser. Drop your video there." Do this after every clone or pull
+too. Only skip it when the user says they don't want the editor opened. If your sandbox cannot start programs,
+tell the user to double-click `start.bat` in this folder.
+
 ## Quick start (any assistant: do this when the user wants to edit a video or "open the editor")
 
 1. First time in a fresh clone there is no `.venv`: run `powershell -ExecutionPolicy Bypass -File install.ps1 -Target .`
    (5 to 10 minutes, downloads models; tell the user it is happening).
-2. Start the edit page as a long-running background process, never as a command you wait on:
-   `.venv\Scripts\python.exe -u scripts\live.py --home <folder for videos> --open`
-   (`--open` opens the user's normal browser; with a video path instead of `--home` it opens that video).
+2. Start the edit page with `start.ps1 -Detached` (above). By hand: run
+   `.venv\Scripts\python.exe -u scripts\live.py --home <folder for videos> --open` as a long-running background
+   process, never as a command you wait on (with a video path instead of `--home` it opens that video).
 3. ALWAYS tell the user the link from its first lines (`http://127.0.0.1:8765`, or the next free port it printed).
    Some assistants run commands in a sandbox that cannot open windows, or stop background processes when the
    turn ends. If the browser did not open, or the page stops answering, ask the user to double-click

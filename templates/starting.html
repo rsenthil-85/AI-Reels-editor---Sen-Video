@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Opening your video editor</title>
+<style>
+body{margin:0;background:#F4F2EC;font-family:system-ui,Segoe UI,sans-serif;color:#111;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.box{background:#fff;border:1.5px solid #E3DFD5;border-radius:20px;padding:40px 48px;max-width:520px;text-align:center}
+h1{font-size:26px;margin:18px 0 8px}
+p{color:#555;font-size:15px;line-height:1.5;margin:6px 0}
+.spin{width:44px;height:44px;border:5px solid #E3DFD5;border-top-color:#2F6FED;border-radius:50%;margin:0 auto;animation:s 1s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+a{display:inline-block;margin-top:18px;background:#2F6FED;color:#fff;text-decoration:none;padding:10px 22px;border-radius:10px;font-weight:600}
+small{display:block;margin-top:16px;color:#888}
+</style></head><body>
+<div class="box">
+ <div class="spin"></div>
+ <h1>Opening your video editor</h1>
+ <p id="msg">This takes a few seconds.</p>
+ <p>The first time on this computer it sets itself up, which takes 5 to 10 minutes. This page opens the editor by itself when it is ready.</p>
+ <a id="go" href="#">Open the editor</a>
+ <small>Keep the black window that opened with this page running while you edit.</small>
+</div>
+<script>
+const port = new URLSearchParams(location.search).get('port') || '8765', url = 'http://127.0.0.1:' + port + '/';
+document.getElementById('go').href = url;
+let n = 0;
+function probe() {   // the editor serves its pictures without a code: when one loads, the editor is up
+  const i = new Image();
+  i.onload = () => location.replace(url);
+  i.onerror = () => { n++; if (n === 20) document.getElementById('msg').textContent = 'Still setting up. You can leave this page open.'; setTimeout(probe, 2000); };
+  i.src = url + 'assets/gallery/storyboard_mixed.jpg?t=' + Date.now();
+}
+probe();
+</script>
+</body></html>

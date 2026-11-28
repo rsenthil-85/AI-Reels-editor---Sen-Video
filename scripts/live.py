@@ -337,6 +337,8 @@ class H(BaseHTTPRequestHandler):
             b = open(os.path.join(ROOT, "templates", "live.html"), encoding="utf-8").read().replace("__PAGE_TOKEN__", PAGE_TOKEN).encode()
             self.send_response(200); self.send_header("Content-Type", TYPES[".html"]); self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b); return
+        if path == "/api/whoami":   # start.ps1 asks this to reuse this install's page instead of starting a second one
+            return self.send_json({"app": "pro-video-editor", "install": os.path.realpath(ROOT)})
         if path == "/api/state":
             rec = []
             for i, x in enumerate(recent_list()[:12]):
@@ -393,13 +395,13 @@ class H(BaseHTTPRequestHandler):
             if not os.path.exists(t):
                 subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-ss", "1.5", "-i", v, "-frames:v", "1", "-vf", "scale=-2:240", "-q:v", "4", t])
             return self.send_file(t)
+        if path.startswith("/assets/"): return self.send_file(os.path.join(ROOT, path[1:]))
         if not ED: return self.send_error(404)
         if path == "/thumb": return self.thumb(q.get("f", [""])[0], q.get("t", ["50%"])[0])
         if path == "/file": return self.send_file(q.get("f", [""])[0])
         if path.startswith("/e/"):
             if ".page_token" in path: return self.send_error(404)   # never hand the page code out as a file
             return self.send_file(os.path.join(ED, path[3:]))
-        if path.startswith("/assets/"): return self.send_file(os.path.join(ROOT, path[1:]))
         self.send_error(404)
 
 def main():
