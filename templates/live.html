@@ -17,7 +17,7 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
 .vlabel{font-size:12px;color:var(--mute);margin-top:6px}
 .steps{list-style:none;margin:0;padding:0}.steps li{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}.steps li:last-child{border:0}
 .dot{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;margin-top:1px}
-.doing .dot{border-color:var(--acc);border-top-color:transparent;animation:spin 1s linear infinite}.done .dot{background:var(--ok);border-color:var(--ok)}
+.failed .dot{background:#E5484D;border-color:#E5484D}.failed span{color:#C0353A}.doing .dot{border-color:var(--acc);border-top-color:transparent;animation:spin 1s linear infinite}.done .dot{background:var(--ok);border-color:var(--ok)}
 @keyframes spin{to{transform:rotate(360deg)}}.steps b{display:block;font-weight:700;font-size:13px}.steps span{color:var(--mute);font-size:12px}.todo b{color:var(--mute)}
 .tl{position:relative;margin-top:6px}.track{display:flex;align-items:center;gap:8px;margin:5px 0}.track label{flex:none;width:82px;font-size:11px;color:var(--mute)}
 .lane{position:relative;flex:1;height:22px;background:#FAF9F6;border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer}
@@ -89,6 +89,7 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
  <button class="newbtn" id="newbtn" type="button" title="Start a new edit from a raw video"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M9 3v12M3 9h12" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>New video</button></header>
 <div class="home" id="home" hidden>
  <button class="back" id="back" type="button" hidden></button>
+ <div class="bigdrop" id="setupbox" hidden style="cursor:default"><div class="spin" style="width:40px;height:40px;border:5px solid #E3DFD5;border-top-color:#2F6FED;border-radius:50%;margin:0 auto 14px;animation:spin 1s linear infinite"></div><h2 id="setuph">Setting up your editor</h2><div class="sub" id="setupmsg">First time on this computer: it downloads what it needs (about 2.5 GB) and sets itself up. This takes 5 to 10 minutes. Keep this page open; it is ready by itself.</div><div class="sub" id="setupstep" style="margin-top:10px;color:#2F6FED"></div></div>
  <label class="bigdrop" id="bigdrop"><input type="file" id="rawfile" accept="video/*,.mov,.mkv" hidden>
   <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><rect x="6" y="12" width="44" height="32" rx="8" fill="#F3F7FF" stroke="#2F6FED" stroke-width="2.5"/><path d="M24 22v12l10-6z" fill="#2F6FED"/></svg>
   <h2>Drop your raw video here</h2>
@@ -311,6 +312,8 @@ window.addEventListener('dragover',e=>e.preventDefault());   // a file dropped o
 window.addEventListener('drop',e=>{e.preventDefault();if(HOME&&e.dataTransfer.files[0])uploadRaw(e.dataTransfer.files[0])});
 async function poll(){
  try{S=await (await fetch('/api/state',{cache:'no-store'})).json()}catch(e){setTimeout(poll,1500);return}
+ const su=S.setup; $('setupbox').hidden=!su; $('bigdrop').hidden=!!su;
+ if(su){$('setupstep').textContent=su.state==='failed'?'':'Now: '+su.step+(su.tail&&su.state==='running'&&!su.tail.startsWith('==>')?' ('+su.tail.slice(0,90)+')':'');$('setuph').textContent=su.state==='failed'?'Setup stopped':su.state==='restarting'?'Ready, opening the editor...':'Setting up your editor';if(su.state==='failed')$('setupmsg').textContent='Something stopped the setup: '+su.tail+'. Ask your AI assistant to fix it, or run start.bat again.'}
  if(S.home){poll.empty=1;if(!HOME)showHome(true);else recentUI();$('back').hidden=true;setTimeout(poll,1500);return}
  if(poll.empty&&HOME&&$('rawprog').hidden){location.reload();return}   // an empty start screen: a video arrived (another tab or the agent), show it
  if(ED0===null)ED0=S.edit_dir;

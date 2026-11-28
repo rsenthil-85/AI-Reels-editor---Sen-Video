@@ -217,7 +217,22 @@ with transparency), places the kept parts, cards, stickers, captions and music, 
 
 ## Speed
 
-Measured on a 4-core laptop with no NVIDIA graphics card, for a 1-minute phone reel:
+Measured on a normal 4-core Windows laptop with no NVIDIA graphics card. Plan on **5 to 10 minutes for a 1-minute
+reel**. The time depends on the kind of edit you pick:
+
+| Edit | 1-minute reel | Measured example |
+|---|---|---|
+| Automatic edit (cuts, clean voice, captions, colour, zoom-ins, music) | about 3 to 5 min | 78 s video, cut to 56 s, Clean cards: 3 min 24 s from Start editing to the finished file |
+| With graphics, cards and stickers made by your AI assistant | about 5 to 10 min | graphics take about 4 to 5 min per minute of reel |
+| With cartoon cut-aways | toward 10 min | each cartoon scene is drawn and rendered for your video |
+| Edit again in another style | 1 to 2 min | 24 s reel re-edited to Clean cards: 75 s |
+| Non-English speech (Tamil, Hindi...) | add about 1 to 2 min | 37 s Tamil video: listening took 90 s |
+
+**The first edit takes longer.** On the first run the speech models load from disk for the first time, Windows
+checks each new library once (Smart App Control can pause it for a moment), and no graphics are cached yet. Later
+edits reuse all of that. Longer videos scale roughly with their length.
+
+What each step costs, for a 1-minute phone reel:
 
 | Step | Time |
 |---|---|
@@ -233,6 +248,37 @@ veryfast at CRF 18 (SSIM 0.98753 vs 0.98765 for the old setting). Details in
 
 ## Install
 
+### What you need
+
+| | |
+|---|---|
+| Computer | Windows 10 or 11. Measured on a 4-core laptop with no graphics card. The scripts are written to run on Mac and Linux too, but only Windows is tested and the installer is Windows only for now |
+| Free disk space | **about 5 GB**: 3.8 GB for the editor (details below) plus Python, Node and ffmpeg. Then about **200 MB per minute of video** you edit |
+| Internet | only for the first install (about 2.5 GB to download). Editing runs offline |
+| Programs | Python 3.10 to 3.12, Node.js LTS and ffmpeg (commands below) |
+
+Where the 5 GB goes (measured):
+
+| Part | Size |
+|---|---|
+| Editor files (scripts, styles, fonts, icons, bundled libraries) | 0.45 GB |
+| Python libraries (`.venv`) | 0.7 GB |
+| Big speech model for Tamil, Hindi and other languages | 1.6 GB (skip with `-NoBigSpeech`) |
+| Speech model for English (Whisper small) | 0.46 GB |
+| Headless browser that draws the graphics | 0.28 GB |
+| Person model for face framing | 0.22 GB |
+| Node libraries | 0.04 GB |
+| **Total** | **about 3.8 GB** (2.2 GB without the big speech model) |
+
+Each video you edit gets a working folder next to it (`<name>_edit`, about 110 MB for a 1-minute video) and the
+finished video (about 45 MB per minute). You can remove an edit's working folder from Recent edits on the start
+screen; it goes to the Recycle Bin and your videos stay.
+
+### Steps
+
+Easiest: double-click `start.bat`, or ask your AI assistant to open the editor. The first time, the page shows
+"Setting up your editor" and installs everything by itself, including Python 3.12, Node.js and ffmpeg if they are
+missing (5 to 10 minutes, about 2.5 GB to download). Then it opens the editor. By hand,
 Windows, with Python 3.10 to 3.12 from python.org, Node.js LTS and ffmpeg:
 
 ```powershell

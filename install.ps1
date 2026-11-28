@@ -33,17 +33,36 @@ function Step($m) { Write-Host "`n==> $m" -ForegroundColor Cyan }
 function Need($cmd, $hint) { if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { throw "$cmd not found. $hint" } }
 
 Step "Checking tools"
-Need ffmpeg "Install it: winget install Gyan.FFmpeg"
-Need node   "Install Node.js LTS: winget install OpenJS.NodeJS.LTS"
-$py = $null
-foreach ($v in "3.12", "3.11", "3.10") {
-  try { $p = & py "-$v" -c "import sys;print(sys.executable)" 2>$null; if ($LASTEXITCODE -eq 0 -and $p) { $py = $p.Trim(); break } } catch {}
+# Missing tools are installed with winget (Windows' own package manager), so a new user needs nothing first.
+function Refresh-Path { $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User") }
+function Get-Tool($cmd, $id, $what) {
+  if (Get-Command $cmd -ErrorAction SilentlyContinue) { return }
+  if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { throw "$what is missing and winget is not available. Install it: winget install $id" }
+  Write-Host "  installing $what (winget $id)..."
+  & winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements --scope user 2>&1 | Out-Host
+  if ($LASTEXITCODE -ne 0) { & winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Host }
+  Refresh-Path
+  $l = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links"   # where winget puts command-line tools such as ffmpeg
+  if (-not (Get-Command $cmd -ErrorAction SilentlyContinue) -and (Test-Path $l)) { $env:Path += ";$l" }
+  if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { throw "$what could not be installed. Install it yourself: winget install $id, then run this again." }
 }
-if (-not $py) {
-  $c = Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python31[012]\python.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-  if ($c) { $py = $c.FullName }
+function Find-Python {
+  foreach ($v in "3.12", "3.11", "3.10") {
+    try { $p = & py "-$v" -c "import sys;print(sys.executable)" 2>$null; if ($LASTEXITCODE -eq 0 -and $p) { return $p.Trim() } } catch {}
+  }
+  $c = Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python31[012]\python.exe", "$env:ProgramFiles\Python31[012]\python.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($c) { return $c.FullName }
+  return $null
 }
-if (-not $py) { throw "Python 3.10-3.12 from python.org not found. Install: winget install Python.Python.3.12" }
+Get-Tool ffmpeg "Gyan.FFmpeg" "ffmpeg (video tool)"
+Get-Tool node "OpenJS.NodeJS.LTS" "Node.js"
+$py = Find-Python
+if (-not $py) {   # a newer Python (3.13, 3.14) is not enough: the speech libraries need 3.10 to 3.12. Both can live side by side.
+  Write-Host "  installing Python 3.12 next to any other Python (winget Python.Python.3.12)..."
+  & winget install --id Python.Python.3.12 -e --silent --accept-package-agreements --accept-source-agreements --scope user 2>&1 | Out-Host
+  Refresh-Path; $py = Find-Python
+}
+if (-not $py) { throw "Python 3.12 could not be installed. Install it: winget install Python.Python.3.12, then run this again." }
 Write-Host "  ffmpeg ok, node $(node -v), python $py"
 
 Step "Copying skill to $Target"

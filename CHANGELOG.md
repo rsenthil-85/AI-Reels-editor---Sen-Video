@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.12.5 - 2026-11-28
+- The editor sets itself up: started from a fresh clone (even as plain "python live.py" with another Python, as Codex
+  did), the page shows "Setting up your editor" with the current step, installs in the background and reopens by
+  itself when ready. Measured on a fresh copy with downloads already cached: 106 s, then a 37 s video analysed.
+- Started with the wrong Python while the setup exists, it switches to the editor's own Python (was: "No module
+  named faster_whisper" and a page stuck on "Listening to your video").
+- The installer gets missing tools itself with winget: Python 3.12 (next to any newer Python), Node.js, ffmpeg.
+- If listening to a video fails, the step turns red with a short reason instead of spinning forever.
+- README: disk space (about 5 GB, measured part by part) and edit times (5 to 10 min for a 1-minute reel).
+
 ## 1.12.4 - 2026-11-28
 - The editor opens in the browser in every session, with any assistant: AGENTS.md, CLAUDE.md and GEMINI.md start
   with "run start.ps1 -Detached", and Claude Code runs it itself at session start (`.claude/settings.json`).

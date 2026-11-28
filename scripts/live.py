@@ -29,6 +29,8 @@ CACHE = os.path.join(os.path.expanduser("~"), ".pro-video-editor", "cache")
 PAGE_TOKEN = secrets.token_hex(16)   # the page sends it back on POST; other sites cannot read it
 FC_PROC = None
 ED = None; SRC = None; WORK = None; PORT = 8765; AUTO = False; AN_PROC = None
+SETUP = None   # {"state": running|failed, "step": ..., "tail": ...} while the editor installs itself (first run)
+VENV = os.path.join(ROOT, ".venv"); VPY = os.path.join(VENV, "Scripts", "python.exe") if os.name == "nt" else os.path.join(VENV, "bin", "python")
 STATE_DIR = os.environ.get("PVE_STATE") or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".state")   # per install: a fresh clone starts with no recent edits (set PVE_STATE to share one)
 RECENT = os.path.join(STATE_DIR, "recent.json"); THUMBS = os.path.join(STATE_DIR, "thumbs")
 VIDEO_EXT = (".mp4", ".mov", ".m4v", ".mkv", ".webm", ".avi")
@@ -65,6 +67,14 @@ def start_analysis(src, ed):
     LL.step(ed, "style", "todo", "waiting for you: pick a style above and press Start editing")
     AN_PROC = subprocess.Popen([sys.executable, os.path.join(HERE, "autoedit.py"), src, "--analyze"],
                                stdout=open(os.path.join(ed, "analyze.log"), "w"), stderr=subprocess.STDOUT)
+    proc = AN_PROC
+    def watch():
+        if proc.wait() != 0 and not os.path.exists(os.path.join(ed, "intake.json")):
+            try: last = [x.strip() for x in open(os.path.join(ed, "analyze.log"), encoding="utf-8", errors="replace") if x.strip()][-1][:200]
+            except Exception: last = ""
+            LL.step(ed, "analyse", "failed", "could not listen to the video. Press + New video and drop it again, or ask your AI assistant to read analyze.log")
+            LL.note(ed, "analysis stopped: " + last)
+    threading.Thread(target=watch, daemon=True).start()
 
 def run_auto(ch, src, ed):
     """--auto: nobody is watching choice.json, so run the scripted edit (style, length, music, zoom-ins) ourselves."""
@@ -119,6 +129,24 @@ def open_browser(url):
         if webbrowser.open(url): return
     except Exception: pass
     print(f"  could not open a browser here - open {url} yourself", flush=True)
+
+def setup_watch(proc, log, srv):
+    """First run: install.ps1 runs in the background while the page shows its progress; then restart on the editor's own Python."""
+    global SETUP
+    while proc.poll() is None:
+        try:
+            lines = [x.rstrip() for x in open(log, encoding="utf-8", errors="replace") if x.strip()]
+            steps = [x[4:] for x in lines if x.startswith("==> ")]
+            SETUP = {"state": "running", "step": steps[-1] if steps else "starting", "n": len(steps), "tail": lines[-1][:160] if lines else ""}
+        except Exception: pass
+        time.sleep(1)
+    if proc.returncode == 0 and os.path.exists(VPY):
+        SETUP = {"state": "restarting", "step": "ready, opening the editor", "n": 99, "tail": ""}
+        threading.Timer(1.5, srv.shutdown).start()   # main() then restarts this page on the editor's own Python
+    else:
+        try: tail = [x.rstrip() for x in open(log, encoding="utf-8", errors="replace") if x.strip()][-3:]
+        except Exception: tail = []
+        SETUP = {"state": "failed", "step": "setup stopped", "n": 0, "tail": " | ".join(tail)[:400]}
 
 def go_home():
     global SRC, ED
@@ -254,6 +282,7 @@ class H(BaseHTTPRequestHandler):
             LL.note(ED, f"file received: {name} ({size / 1e6:.1f} MB)")
             return self.send_json({"ok": True, "path": dest, "name": name})
         if path == "/api/new":   # a raw video to edit: save it, analyse it, switch the page to it
+            if SETUP: return self.send_json({"ok": False, "error": "The editor is still setting itself up. Drop your video when this page says it is ready."})
             name = clean_name(self.headers.get("X-Filename")); stem, ext = os.path.splitext(name)
             if ext.lower() not in VIDEO_EXT: return self.send_json({"ok": False, "error": "use a video file (mp4, mov, m4v, webm, mkv)"})
             size = int(self.headers.get("Content-Length") or 0)
@@ -349,7 +378,7 @@ class H(BaseHTTPRequestHandler):
                             "status": "finished" if fin else ("editing" if lj.get("style") or os.path.exists(os.path.join(x["edit_dir"], "choice.json")) else "waiting for a style"),
                             "style": lj.get("style") or "", "current": bool(ED) and os.path.realpath(x["edit_dir"]) == os.path.realpath(ED)})
             if not ED:
-                return self.send_json({"home": True, "recent": rec, "work_dir": WORK})
+                return self.send_json({"home": True, "recent": rec, "work_dir": WORK, "setup": SETUP})
             st = self.state(); st["recent"] = rec; st["work_dir"] = WORK;  st["progress"] = self.progress(); st["edit_dir"] = ED
             st["styles"] = {k: {"label": v["label"], "tagline": v.get("tagline", ""), "caption": v.get("caption", "karaoke"), "accent": v.get("accent", "")} for k, v in
                             json.load(open(os.path.join(ROOT, "styles", "edit_styles.json"), encoding="utf-8")).items()}
@@ -406,8 +435,15 @@ class H(BaseHTTPRequestHandler):
 
 def main():
     global WORK, PORT, AUTO, PAGE_TOKEN
+    global SETUP
     a = sys.argv[1:]
     if not a: print(__doc__); sys.exit(1)
+    me = [os.path.abspath(__file__)] + a
+    if os.path.exists(VPY) and os.path.realpath(sys.prefix) != os.path.realpath(VENV):
+        # started with another Python (an assistant ran "python live.py"): the speech and video libraries live in the
+        # editor's own environment, so run there
+        print("  switching to the editor's own Python", flush=True)
+        sys.exit(subprocess.call([VPY, "-u"] + me))
     AUTO = "--auto" in a
     vid = a[0] if not a[0].startswith("--") else None
     hv = a[a.index("--home") + 1] if "--home" in a and a.index("--home") + 1 < len(a) and not a[a.index("--home") + 1].startswith("--") else None
@@ -440,7 +476,23 @@ def main():
     print(f"  open this link in your browser if it does not open by itself: {url}", flush=True)
     if "--open" in a:   # also open it in the computer's normal browser (other agents, or no browser pane)
         threading.Timer(0.8, open_browser, args=(url,)).start()
+    if not os.path.exists(VPY):   # first run: set the editor up by itself while the page shows the progress
+        if os.name != "nt":
+            print("  first run: run install.ps1 (Windows) to set up the editor; Mac/Linux setup is not automatic yet", flush=True)
+        else:
+            log = os.path.join(STATE_DIR, "setup.log")
+            print("  first run: setting up the editor (5 to 10 minutes, downloads about 2.5 GB). Progress: " + log, flush=True)
+            SETUP = {"state": "running", "step": "starting", "n": 0, "tail": ""}
+            proc = subprocess.Popen(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", os.path.join(ROOT, "install.ps1"), "-Target", ROOT],
+                                    stdout=open(log, "w", encoding="utf-8"), stderr=subprocess.STDOUT, cwd=ROOT)
+            threading.Thread(target=setup_watch, args=(proc, log, srv), daemon=True).start()
     srv.serve_forever()
+    if SETUP and SETUP.get("state") == "restarting":   # set up: same page, now on the editor's own Python
+        srv.server_close()
+        me = [x for x in me if x != "--open"]   # the browser tab is already open
+        if "--port" in me: me[me.index("--port") + 1] = str(port)
+        else: me += ["--port", str(port)]
+        sys.exit(subprocess.call([VPY, "-u"] + me))
 
 if __name__ == "__main__":
     main()
