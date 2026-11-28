@@ -170,9 +170,9 @@ function capsUI(){
 const EXTRAS=[['music','Music'],['zooms','Zoom-ins'],['stickers','Icon stickers'],['checklist','Recap checklist'],['toon','Cartoon cut-aways']];
 function chooseUI(){
  const show=!!S.styles; $('choose').hidden=!show; $('chosen').hidden=true;   // every option stays open, also after Start editing
- const fin=S.steps?.done?.state==='done', busy=!!S.choice&&!fin&&!S.home;
- if($('go')&&built){$('go').disabled=busy||$('go').dataset.sending==='1'; $('go').textContent=busy?'Editing with these choices...':S.choice?'Edit again with these choices':'Start editing';
-  $('againnote').textContent=busy?'You can change anything here once this edit is finished.':S.choice?'Change the style, captions, length or extras above, then edit again. Your finished video is kept under a new name.':''}
+ const fin=S.steps?.done?.state==='done', busy=!!S.editing&&!fin&&!S.home;
+ if($('go')&&built){$('go').disabled=busy||$('go').dataset.sending==='1'; $('go').textContent=busy?'Editing with these choices...':S.plan?'Edit again with these choices':'Start editing';
+  $('againnote').textContent=busy?'You can change anything here once this edit is finished.':S.plan?'Change the style, captions, length or extras above, then edit again. Your finished video is kept under a new name.':''}
  if(false){const c=S.choice,l=c.style==='describe'?'Your own: '+c.describe:(S.styles?.[c.style]?.label||c.style);
   $('chosen').hidden=false;$('chosen').innerHTML=`<b>Your choice:</b> ${esc(l)} &middot; ${c.captions&&c.captions!=='style'?esc((CAPS.find(x=>x[0]===c.captions)||[0,c.captions])[1])+' captions':'style captions'}${c.caption_color&&c.captions!=='none'?` <i style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${c.caption_color};border:1px solid #0003;vertical-align:-1px"></i>`:''} &middot; ${c.length==='full'?'full length':c.length+' s'} &middot; ${esc(c.extras.join(', ')||'no extras')} &middot; ${c.finish==='filmcraft'?'then touch up in FilmCraft':'done for you'}`}
  const ik=S.intake?1:0; if(!show||!S.styles||built===ik+1)return; built=ik+1;
@@ -204,7 +204,7 @@ function chooseUI(){
   if(UPPING){$('err').textContent='Wait for the upload to finish';return}
   if(pick.style==='news'&&!pick.materials){$('err').textContent='Add your screenshots first';return}
   if(pick.style==='describe'&&!pick.describe.trim()){$('err').textContent='Write what you want first, or pick a style';return}
-  if(S.choice&&!confirm('Edit this video again with these choices? The finished video you have now is kept.'))return;
+  if(S.plan&&!confirm('Edit this video again with these choices? The finished video you have now is kept.'))return;
   $('err').textContent='';$('go').disabled=true;$('go').dataset.sending='1';
   try{const rs=await fetch('/api/choose',{method:'POST',headers:{'Content-Type':'application/json','X-Page-Token':TOKEN},body:JSON.stringify(Object.assign({},pick,{caption_color:pick.cc}))});
    if(rs.status===403){stale();return}

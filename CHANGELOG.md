@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.7 - 2026-11-28
+- Fix: the page said "Editing with these choices..." before you pressed Start. A choice saved in an earlier run
+  whose edit never happened (the listening step had failed) was taken as an edit in progress. Now a new listen
+  clears such a choice, the page only shows "editing" for a choice made in the current run, and the button
+  says "Start editing" until the video has actually been edited once.
+
 ## 1.12.6 - 2026-11-28
 - Faster setup downloads: curl.exe (built into Windows) with retry and resume, instead of PowerShell's
   Invoke-WebRequest, which ran at about 1 MB/s (the 1.6 GB speech model took over 30 minutes on a first install).

@@ -63,6 +63,11 @@ def start_analysis(src, ed):
     """A video that arrived through the page: analyse it here (transcribe, cut, intake) - no agent needed for this part."""
     global AN_PROC
     if os.path.exists(os.path.join(ed, "intake.json")): return          # analysed before (same file uploaded again)
+    if not os.path.exists(os.path.join(ed, "plan.json")):
+        # a choice left from a run that never got to edit (e.g. the analysis failed) is stale: let the user choose again
+        for f in ("choice.json", "choice.taken"):
+            try: os.remove(os.path.join(ed, f))
+            except OSError: pass
     LL.reset(ed, video=os.path.basename(src), src=src)
     LL.step(ed, "style", "todo", "waiting for you: pick a style above and press Start editing")
     AN_PROC = subprocess.Popen([sys.executable, os.path.join(HERE, "autoedit.py"), src, "--analyze"],
@@ -395,7 +400,11 @@ class H(BaseHTTPRequestHandler):
             st["filmcraft_screen"] = ("filmcraft/" + shots[-1]) if shots else None
             cp = os.path.join(ED, "choice.json")
             if os.path.exists(cp):
-                try: st["choice"] = json.load(open(cp, encoding="utf-8"))
+                try:
+                    ch = json.load(open(cp, encoding="utf-8"))
+                    st["choice"] = ch
+                    # an edit is under way only for a choice made in this run (after the steps were last reset)
+                    st["editing"] = ch.get("t", 0) >= st.get("start", 0) - 120 and (st.get("steps", {}).get("done", {}) or {}).get("state") != "done" and not any((v or {}).get("state") == "failed" for v in st.get("steps", {}).values())
                 except Exception: pass
             for k in ("plan.json", "intake.json"):
                 fp = os.path.join(ED, k)
