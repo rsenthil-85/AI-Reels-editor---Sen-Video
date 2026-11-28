@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.6 - 2026-11-28
+- Faster setup downloads: curl.exe (built into Windows) with retry and resume, instead of PowerShell's
+  Invoke-WebRequest, which ran at about 1 MB/s (the 1.6 GB speech model took over 30 minutes on a first install).
+  Measured on the same connection: 3.4 MB/s while another download was running.
+- The setup screen shows the speech model download in MB and percent.
+
 ## 1.12.5 - 2026-11-28
 - The editor sets itself up: started from a fresh clone (even as plain "python live.py" with another Python, as Codex
   did), the page shows "Setting up your editor" with the current step, installs in the background and reopens by

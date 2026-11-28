@@ -138,6 +138,10 @@ def setup_watch(proc, log, srv):
             lines = [x.rstrip() for x in open(log, encoding="utf-8", errors="replace") if x.strip()]
             steps = [x[4:] for x in lines if x.startswith("==> ")]
             SETUP = {"state": "running", "step": steps[-1] if steps else "starting", "n": len(steps), "tail": lines[-1][:160] if lines else ""}
+            mb = os.path.join(ROOT, "assets", "models", "whisper-large-v3-turbo", "model.bin")
+            if steps and steps[-1].startswith("Big speech model") and os.path.exists(mb):   # 1.6 GB: say how far it is
+                got = os.path.getsize(mb) / 1e6
+                SETUP["tail"] = f"downloaded {got:,.0f} of 1,618 MB ({min(got / 1618, 1):.0%})"
         except Exception: pass
         time.sleep(1)
     if proc.returncode == 0 and os.path.exists(VPY):

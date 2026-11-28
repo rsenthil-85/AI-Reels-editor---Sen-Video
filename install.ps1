@@ -30,6 +30,15 @@ param(
 $ErrorActionPreference = "Stop"
 $Src = Split-Path -Parent $MyInvocation.MyCommand.Path
 function Step($m) { Write-Host "`n==> $m" -ForegroundColor Cyan }
+$ProgressPreference = "SilentlyContinue"   # Invoke-WebRequest's progress bar alone slows big downloads many times over
+function Get-File($url, $out) {
+  # curl.exe ships with Windows 10 and 11: fast, retries, and resumes a half-finished file (-C -)
+  if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
+    & curl.exe -L --fail --retry 5 --retry-delay 3 -C - -s -S -o $out $url
+    if ($LASTEXITCODE -eq 0) { return }
+  }
+  Invoke-WebRequest $url -OutFile $out -UseBasicParsing
+}
 function Need($cmd, $hint) { if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { throw "$cmd not found. $hint" } }
 
 Step "Checking tools"
@@ -114,7 +123,7 @@ if (-not $NoModels -or $WithMatte) {
   & $venvPy -m pip install -q onnxruntime
   $m = Join-Path $Target "assets\models"; New-Item -ItemType Directory -Force $m | Out-Null
   if (-not (Test-Path (Join-Path $m "birefnet_lite.onnx"))) {
-    Invoke-WebRequest "https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model.onnx" -OutFile (Join-Path $m "birefnet_lite.onnx")
+    Get-File "https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model.onnx" (Join-Path $m "birefnet_lite.onnx")
   }
   Invoke-WebRequest "https://raw.githubusercontent.com/ZhengPeng7/BiRefNet/main/LICENSE" -OutFile "$m\LICENSE-BiRefNet.txt"
 }
@@ -136,7 +145,7 @@ if (-not $NoModels -and -not $NoBigSpeech) {
     New-Item -ItemType Directory -Force $bd | Out-Null
     $base = "https://huggingface.co/mobiuslabsgmbh/faster-whisper-large-v3-turbo/resolve/main"
     foreach ($f in "config.json","preprocessor_config.json","tokenizer.json","vocabulary.json","README.md","model.bin") {
-      Invoke-WebRequest "$base/$f" -OutFile (Join-Path $bd $f)
+      Get-File "$base/$f" (Join-Path $bd $f)
     }
   }
 }
@@ -148,7 +157,7 @@ if ($WithFilmCraft) {
   $base = "https://github.com/storytold/filmcraft/releases/download/v$FilmCraftVersion"
   $fcDir = Join-Path $Target "tools\filmcraft"; New-Item -ItemType Directory -Force $fcDir | Out-Null
   $zip = Join-Path $fcDir $zipName
-  if (-not (Test-Path $zip)) { Invoke-WebRequest "$base/$zipName" -OutFile $zip }
+  if (-not (Test-Path $zip)) { Get-File "$base/$zipName" $zip }
   $sums = (Invoke-WebRequest "$base/SHA256SUMS.txt" -UseBasicParsing).Content
   $want = ($sums -split "`n" | Where-Object { $_ -match [regex]::Escape($zipName) } | ForEach-Object { ($_ -split "\s+")[0] }) | Select-Object -First 1
   $got = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
