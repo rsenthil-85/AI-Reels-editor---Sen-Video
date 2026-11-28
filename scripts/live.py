@@ -1,6 +1,16 @@
 """live.py - the edit page: choose the style, watch the edit happen, open it in FilmCraft for touch-ups in a browser (Claude's browser pane or any browser).
 
-    python live.py <video or its _edit folder> [--port 8765]        then open http://127.0.0.1:8765
+    python live.py <video or its _edit folder> [--port 8765] [--open] [--auto]
+    python live.py --home [folder] [--port 8765] [--open] [--auto]     (no video yet: the page starts with the upload screen)
+    then open http://127.0.0.1:8765
+
+--open: also open it in the normal browser. --home: where raw videos uploaded on the page are saved (default: the
+video's folder, else ~/Videos/Pro video editor). --auto: no agent is watching, so the page runs the scripted edit
+itself when the user presses Start editing (autoedit.py --answers; no hand-made graphics).
+
+The page has a "New video" button: the user uploads a raw video, live.py saves it, starts autoedit.py --analyze and
+switches the page to it. Agents follow the current video through ~/.pro-video-editor/current.json and wait for the
+user's choice with scripts/wait_choice.py. Recent edits (~/.pro-video-editor/recent.json) can be reopened on the page.
 
 Local only (binds 127.0.0.1), read-only, standard library only. Serves templates/live.html plus, from the edit
 folder: live.json (progress from livelog.py), plan.json, words / segments, cut.mp4, the finished video, graphics
@@ -18,6 +28,11 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 CACHE = os.path.join(os.path.expanduser("~"), ".pro-video-editor", "cache")
 PAGE_TOKEN = secrets.token_hex(16)   # the page sends it back on POST; other sites cannot read it
 FC_PROC = None
+ED = None; SRC = None; WORK = None; PORT = 8765; AUTO = False; AN_PROC = None
+STATE_DIR = os.path.join(os.path.expanduser("~"), ".pro-video-editor")
+RECENT = os.path.join(STATE_DIR, "recent.json"); THUMBS = os.path.join(STATE_DIR, "thumbs")
+VIDEO_EXT = (".mp4", ".mov", ".m4v", ".mkv", ".webm", ".avi")
+LOCK = threading.Lock()
 TYPES = {".html": "text/html; charset=utf-8", ".json": "application/json", ".mp4": "video/mp4", ".png": "image/png",
          ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".ttf": "font/ttf", ".js": "text/javascript"}
 
@@ -26,15 +41,105 @@ def edit_dir_of(p):
     if os.path.isdir(p): return p
     return os.path.join(os.path.dirname(p), os.path.splitext(os.path.basename(p))[0] + "_edit")
 
+def recent_list():
+    try: r = json.load(open(RECENT, encoding="utf-8"))
+    except Exception: r = []
+    return [x for x in r if isinstance(x, dict) and os.path.isdir(x.get("edit_dir") or "")]
+
+def set_current(src, ed):
+    """Switch the page to another video; agents read ~/.pro-video-editor/current.json to follow it."""
+    global SRC, ED
+    with LOCK:
+        SRC, ED = src, ed; os.makedirs(ED, exist_ok=True); os.makedirs(STATE_DIR, exist_ok=True)
+        r = [x for x in recent_list() if os.path.realpath(x["edit_dir"]) != os.path.realpath(ed)]
+        r.insert(0, {"video": src or "", "edit_dir": ed, "t": time.time()})
+        json.dump(r[:30], open(RECENT, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+        json.dump({"video": src, "edit_dir": ed, "port": PORT, "t": time.time()},
+                  open(os.path.join(STATE_DIR, "current.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+
+def start_analysis(src, ed):
+    """A video that arrived through the page: analyse it here (transcribe, cut, intake) - no agent needed for this part."""
+    global AN_PROC
+    if os.path.exists(os.path.join(ed, "intake.json")): return          # analysed before (same file uploaded again)
+    LL.reset(ed, video=os.path.basename(src), src=src)
+    LL.step(ed, "style", "todo", "waiting for you: pick a style above and press Start editing")
+    AN_PROC = subprocess.Popen([sys.executable, os.path.join(HERE, "autoedit.py"), src, "--analyze"],
+                               stdout=open(os.path.join(ed, "analyze.log"), "w"), stderr=subprocess.STDOUT)
+
+def run_auto(ch, src, ed):
+    """--auto: nobody is watching choice.json, so run the scripted edit (style, length, music, zoom-ins) ourselves."""
+    open(os.path.join(ed, "choice.taken"), "w").write("auto")   # at once, so an agent that starts listening now leaves it alone
+    def go():
+        while not os.path.exists(os.path.join(ed, "intake.json")):   # analysis still running
+            if AN_PROC is not None and AN_PROC.poll() is not None and not os.path.exists(os.path.join(ed, "intake.json")):
+                LL.note(ed, "analysis failed - see analyze.log"); return
+            time.sleep(1)
+        ans = {"style": ch["style"] if ch["style"] != "describe" else "mixed",
+               "format": {"full": "reel_full", "60": "reel_60", "30": "reel_30"}[ch["length"]],
+               "extras": [x for x in ch["extras"] if x in ("music", "zooms", "bg_replace")]}
+        if ch.get("captions") not in (None, "", "style"): ans["captions"] = ch["captions"]
+        if ch.get("caption_color"): ans["caption_color"] = ch["caption_color"]
+        ap = os.path.join(ed, "answers.json"); json.dump(ans, open(ap, "w", encoding="utf-8"), indent=1)
+        open(os.path.join(ed, "choice.taken"), "w").write("auto")
+        subprocess.Popen([sys.executable, os.path.join(HERE, "autoedit.py"), src, "--answers", ap],
+                         stdout=open(os.path.join(ed, "auto_edit.log"), "w"), stderr=subprocess.STDOUT)
+    threading.Thread(target=go, daemon=True).start()
+
+def go_home():
+    global SRC, ED
+    SRC = ED = None
+
+def folder_size(p):
+    n = 0
+    for root, _, files in os.walk(p):
+        for f in files:
+            try: n += os.path.getsize(os.path.join(root, f))
+            except OSError: pass
+    return n
+
+def edit_running(ed):
+    """True while an edit is still being made (a step is in progress and it is not finished)."""
+    try: st = json.load(open(os.path.join(ed, "live.json"), encoding="utf-8")).get("steps", {})
+    except Exception: return False
+    return (st.get("done", {}) or {}).get("state") != "done" and any((v or {}).get("state") == "doing" for v in st.values())
+
+def recycle(path):
+    """Move a folder to the Recycle Bin (it can be restored), never a hard delete."""
+    if os.name != "nt": return False
+    ps = ("Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory("
+          "$env:PVE_RECYCLE, 'OnlyErrorDialogs', 'SendToRecycleBin')")
+    r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], env={**os.environ, "PVE_RECYCLE": path},
+                       capture_output=True, timeout=300)
+    return r.returncode == 0 and not os.path.exists(path)
+
+def agent_listening():
+    """wait_choice.py touches agent.alive every second while it waits for the user's choice."""
+    try: return time.time() - float(open(os.path.join(STATE_DIR, "agent.alive")).read()) < 5
+    except (OSError, ValueError): return False
+
+def receive(rfile, size, dest):
+    left = size
+    with open(dest, "wb") as fo:
+        while left > 0:
+            chunk = rfile.read(min(1 << 20, left))
+            if not chunk: break
+            fo.write(chunk); left -= len(chunk)
+    if left: os.remove(dest)
+    return not left
+
+def clean_name(h):
+    return re.sub(r"[^\w.\- ]+", "_", os.path.basename(unquote(h or "upload")))[:120].strip() or "upload"
+
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
 
     def allowed(self, p):
-        p = os.path.realpath(p); roots = [os.path.realpath(ED), os.path.realpath(CACHE), os.path.realpath(os.path.join(ROOT, "assets")), os.path.realpath(os.path.join(ROOT, "templates"))]
+        p = os.path.realpath(p); roots = ([os.path.realpath(ED)] if ED else []) + [os.path.realpath(THUMBS), os.path.realpath(CACHE), os.path.realpath(os.path.join(ROOT, "assets")), os.path.realpath(os.path.join(ROOT, "templates"))]
         out = (self.state().get("out") or "")
-        return any(p.startswith(r + os.sep) for r in roots) or (out and p == os.path.realpath(out)) or p == os.path.realpath(SRC or "")
+        return any(p.startswith(r + os.sep) for r in roots) or (out and p == os.path.realpath(out)) or bool(SRC and p == os.path.realpath(SRC))
 
     def state(self):
+        if not ED: return {}
         try: return json.load(open(os.path.join(ED, "live.json"), encoding="utf-8"))
         except Exception: return {}
 
@@ -102,30 +207,71 @@ class H(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if self.headers.get("X-Page-Token") != PAGE_TOKEN: return self.send_error(403)
         if path == "/api/upload":   # a file from the user's computer (screen recording, screenshots) -> <edit>/materials/
-            from urllib.parse import unquote as _uq
-            name = re.sub(r"[^\w.\- ]+", "_", os.path.basename(_uq(self.headers.get("X-Filename") or "upload")))[:120] or "upload"
+            if not ED: return self.send_json({"ok": False, "error": "upload your video first"})
+            name = clean_name(self.headers.get("X-Filename"))
             if os.path.splitext(name)[1].lower() not in (".mp4", ".mov", ".m4v", ".mkv", ".webm", ".avi", ".png", ".jpg", ".jpeg", ".webp"):
                 return self.send_json({"ok": False, "error": "use a video (mp4, mov, webm...) or an image (png, jpg, webp)"})
             size = int(self.headers.get("Content-Length") or 0)
             if size <= 0 or size > 4 * 1024 ** 3: return self.send_json({"ok": False, "error": "file is empty or over 4 GB"})
             md = os.path.join(ED, "materials"); os.makedirs(md, exist_ok=True)
-            dest = os.path.join(md, name); left = size
-            with open(dest, "wb") as fo:
-                while left > 0:
-                    chunk = self.rfile.read(min(1 << 20, left))
-                    if not chunk: break
-                    fo.write(chunk); left -= len(chunk)
-            if left: os.remove(dest); return self.send_json({"ok": False, "error": "upload was interrupted"})
+            dest = os.path.join(md, name)
+            if not receive(self.rfile, size, dest): return self.send_json({"ok": False, "error": "upload was interrupted"})
             LL.note(ED, f"file received: {name} ({size / 1e6:.1f} MB)")
             return self.send_json({"ok": True, "path": dest, "name": name})
+        if path == "/api/new":   # a raw video to edit: save it, analyse it, switch the page to it
+            name = clean_name(self.headers.get("X-Filename")); stem, ext = os.path.splitext(name)
+            if ext.lower() not in VIDEO_EXT: return self.send_json({"ok": False, "error": "use a video file (mp4, mov, m4v, webm, mkv)"})
+            size = int(self.headers.get("Content-Length") or 0)
+            if size <= 0 or size > 8 * 1024 ** 3: return self.send_json({"ok": False, "error": "file is empty or over 8 GB"})
+            os.makedirs(WORK, exist_ok=True)
+            part = os.path.join(WORK, f".upload_{secrets.token_hex(4)}{ext}")
+            if not receive(self.rfile, size, part): return self.send_json({"ok": False, "error": "upload was interrupted - try again"})
+            dest = os.path.join(WORK, name); n = 2
+            while os.path.exists(dest) and os.path.getsize(dest) != size:   # same name, different video: keep both
+                dest = os.path.join(WORK, f"{stem} ({n}){ext}"); n += 1
+            if os.path.exists(dest): os.remove(part)                         # the same video again: reuse its edit
+            else: os.replace(part, dest)
+            set_current(dest, edit_dir_of(dest)); start_analysis(dest, ED)
+            return self.send_json({"ok": True, "video": dest})
         try: body = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length") or 0), 20000)) or b"{}")
         except Exception: return self.send_error(400)
+        if path == "/api/open":   # reopen one of the recent edits
+            r = recent_list(); i = body.get("i")
+            if not isinstance(i, int) or not 0 <= i < len(r): return self.send_json({"ok": False, "error": "not found"})
+            src = r[i].get("video") or None; set_current(src if src and os.path.isfile(src) else None, r[i]["edit_dir"])
+            if SRC and not os.path.exists(os.path.join(ED, "live.json")): start_analysis(SRC, ED)
+            if os.path.exists(os.path.join(ED, "plan.json")) and not os.path.exists(os.path.join(ED, "choice.taken")):
+                open(os.path.join(ED, "choice.taken"), "w").write("old")   # an old edit: don't hand its choice to an agent again
+            return self.send_json({"ok": True})
+        if path == "/api/forget":   # remove an edit from Recent edits; optionally its _edit folder to the Recycle Bin
+            r = recent_list(); i = body.get("i")
+            if not isinstance(i, int) or not 0 <= i < len(r): return self.send_json({"ok": False, "error": "not found"})
+            ed = r[i]["edit_dir"]; files = bool(body.get("files"))
+            if files:
+                if edit_running(ed): return self.send_json({"ok": False, "error": "This edit is still being made. Wait for it to finish, or remove it from the list only."})
+                if not (os.path.basename(os.path.normpath(ed)).endswith("_edit") and os.path.isdir(ed)):
+                    return self.send_json({"ok": False, "error": "Only an edit's own _edit folder can be removed."})
+            with LOCK:
+                keep = [x for x in recent_list() if os.path.realpath(x["edit_dir"]) != os.path.realpath(ed)]
+                json.dump(keep, open(RECENT, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+                if ED and os.path.realpath(ED) == os.path.realpath(ed):   # the open edit: back to the start screen
+                    go_home()
+                    json.dump({"video": None, "edit_dir": None, "port": PORT, "t": time.time()},
+                              open(os.path.join(STATE_DIR, "current.json"), "w", encoding="utf-8"), indent=1)
+            freed = 0
+            if files:
+                freed = folder_size(ed)
+                if not recycle(ed): return self.send_json({"ok": True, "removed": True, "error": "Removed from the list, but the folder could not be moved to the Recycle Bin: " + ed})
+            return self.send_json({"ok": True, "removed": True, "freed_mb": round(freed / 1e6)})
+        if not ED: return self.send_json({"ok": False, "error": "upload your video first"})
         if path == "/api/choose":   # style / length / extras / finish - Claude (watching choice.json) takes it from here
             styles = json.load(open(os.path.join(ROOT, "styles", "edit_styles.json"), encoding="utf-8"))
             ch = {"style": body.get("style") if body.get("style") in styles or body.get("style") == "describe" else "mixed",
                   "describe": str(body.get("describe", ""))[:600],
                   "length": body.get("length") if body.get("length") in ("full", "60", "30") else "full",
-                  "extras": [x for x in body.get("extras", []) if x in ("music", "zooms", "stickers", "checklist", "motion_bg", "bg_replace")],
+                  "extras": [x for x in body.get("extras", []) if x in ("music", "zooms", "stickers", "checklist", "motion_bg", "bg_replace", "toon")],
+                  "captions": body.get("captions") if body.get("captions") in ("karaoke", "pill", "duo", "stack", "minimal", "none") else "style",
+                  "caption_color": body.get("caption_color") if re.fullmatch(r"#[0-9A-Fa-f]{6}", str(body.get("caption_color") or "")) else "",
                   "finish": "filmcraft" if body.get("finish") == "filmcraft" else "auto",
                   "materials": str(body.get("materials", ""))[:2000], "t": time.time()}
             json.dump(ch, open(os.path.join(ED, "choice.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
@@ -133,6 +279,10 @@ class H(BaseHTTPRequestHandler):
             LL.step(ED, "style", "doing", f"{lbl} - planning the graphics" + (", then FilmCraft" if ch["finish"] == "filmcraft" else ""))
             LL.note(ED, "choice received: " + lbl)
             if ch["finish"] == "filmcraft": LL.step(ED, "filmcraft", "todo", "after the edit is finished")
+            if SRC and (AUTO or not agent_listening()):   # nobody to hand it to: edit it here so the page never waits forever
+                if not AUTO: LL.note(ED, "no AI agent is listening, so the automatic edit runs (no hand-made graphics); ask in the chat for the full version")
+                LL.step(ED, "style", "doing", f"{lbl} - automatic edit")
+                run_auto(ch, SRC, ED)
             return self.send_json({"ok": True, "choice": ch})
         if path == "/api/filmcraft":   # open the finished edit in FilmCraft (runs filmcraft_open.py; no Claude needed)
             global FC_PROC
@@ -150,8 +300,18 @@ class H(BaseHTTPRequestHandler):
             self.send_response(200); self.send_header("Content-Type", TYPES[".html"]); self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b); return
         if path == "/api/state":
-            st = self.state(); st["progress"] = self.progress(); st["edit_dir"] = ED
-            st["styles"] = {k: {"label": v["label"], "tagline": v.get("tagline", "")} for k, v in
+            rec = []
+            for i, x in enumerate(recent_list()[:12]):
+                try: lj = json.load(open(os.path.join(x["edit_dir"], "live.json"), encoding="utf-8"))
+                except Exception: lj = {}
+                fin = (lj.get("steps", {}).get("done", {}) or {}).get("state") == "done"
+                rec.append({"i": i, "name": os.path.basename(x.get("video") or x["edit_dir"]), "t": x.get("t", 0),
+                            "status": "finished" if fin else ("editing" if lj.get("style") or os.path.exists(os.path.join(x["edit_dir"], "choice.json")) else "waiting for a style"),
+                            "style": lj.get("style") or "", "current": bool(ED) and os.path.realpath(x["edit_dir"]) == os.path.realpath(ED)})
+            if not ED:
+                return self.send_json({"home": True, "recent": rec, "work_dir": WORK})
+            st = self.state(); st["recent"] = rec; st["work_dir"] = WORK;  st["progress"] = self.progress(); st["edit_dir"] = ED
+            st["styles"] = {k: {"label": v["label"], "tagline": v.get("tagline", ""), "caption": v.get("caption", "karaoke"), "accent": v.get("accent", "")} for k, v in
                             json.load(open(os.path.join(ROOT, "styles", "edit_styles.json"), encoding="utf-8")).items()}
             try:
                 import filmcraft_open as FCO; fc = FCO.find_fc([]); st["filmcraft_installed"] = bool(fc and os.path.exists(fc))
@@ -171,30 +331,73 @@ class H(BaseHTTPRequestHandler):
                     except Exception: pass
             for k in ("cut.mp4",): st["has_" + k.replace(".", "_")] = os.path.exists(os.path.join(ED, k))
             return self.send_json(st)
-        if path == "/api/words":
+        if path == "/api/words" and ED:
             out = {}
             for k in ("words.json", "words_cut.json", "segments.json"):
                 fp = os.path.join(ED, k)
                 if os.path.exists(fp): out[k[:-5]] = json.load(open(fp, encoding="utf-8"))
             return self.send_json(out)
+        if path == "/api/size":   # how much space an edit's working folder takes (for the remove box)
+            r = recent_list(); i = q.get("i", [""])[0]
+            if not i.isdigit() or int(i) >= len(r): return self.send_json({"ok": False})
+            ed = r[int(i)]["edit_dir"]
+            return self.send_json({"ok": True, "mb": round(folder_size(ed) / 1e6), "folder": ed, "running": edit_running(ed)})
+        if path == "/rthumb":   # first look at a recent video for the Recent edits list
+            r = recent_list(); i = int((q.get("i", ["-1"])[0]) or -1) if (q.get("i", ["-1"])[0]).lstrip("-").isdigit() else -1
+            if not 0 <= i < len(r): return self.send_error(404)
+            v = r[i].get("video") or ""; fin = os.path.join(r[i]["edit_dir"], "live.json")
+            try: out = json.load(open(fin, encoding="utf-8")).get("out") or ""
+            except Exception: out = ""
+            v = out if out and os.path.isfile(out) else v
+            if not os.path.isfile(v): return self.send_error(404)
+            os.makedirs(THUMBS, exist_ok=True)
+            t = os.path.join(THUMBS, re.sub(r"[^\w]+", "_", v)[-80:] + f"_{os.path.getmtime(v):.0f}.jpg")
+            if not os.path.exists(t):
+                subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-ss", "1.5", "-i", v, "-frames:v", "1", "-vf", "scale=-2:240", "-q:v", "4", t])
+            return self.send_file(t)
+        if not ED: return self.send_error(404)
         if path == "/thumb": return self.thumb(q.get("f", [""])[0], q.get("t", ["50%"])[0])
         if path == "/file": return self.send_file(q.get("f", [""])[0])
-        if path.startswith("/e/"): return self.send_file(os.path.join(ED, path[3:]))
+        if path.startswith("/e/"):
+            if ".page_token" in path: return self.send_error(404)   # never hand the page code out as a file
+            return self.send_file(os.path.join(ED, path[3:]))
         if path.startswith("/assets/"): return self.send_file(os.path.join(ROOT, path[1:]))
         self.send_error(404)
 
 def main():
-    global ED, SRC
+    global WORK, PORT, AUTO, PAGE_TOKEN
     a = sys.argv[1:]
     if not a: print(__doc__); sys.exit(1)
-    ED = edit_dir_of(a[0]); os.makedirs(ED, exist_ok=True)
-    SRC = a[0] if os.path.isfile(a[0]) else None
+    AUTO = "--auto" in a
+    vid = a[0] if not a[0].startswith("--") else None
+    hv = a[a.index("--home") + 1] if "--home" in a and a.index("--home") + 1 < len(a) and not a[a.index("--home") + 1].startswith("--") else None
+    if vid: ed0 = edit_dir_of(vid); WORK = hv or os.path.dirname(os.path.abspath(ed0))
+    else: ed0 = None; WORK = hv or os.path.join(os.path.expanduser("~"), "Videos", "Pro video editor")
+    WORK = os.path.abspath(WORK)
+    # one page code, kept across restarts: a tab opened before a restart can still press Start
+    os.makedirs(STATE_DIR, exist_ok=True)
+    tf = os.path.join(ed0, ".page_token") if ed0 else os.path.join(STATE_DIR, ".page_token")
+    if ed0: os.makedirs(ed0, exist_ok=True)
+    try: PAGE_TOKEN = open(tf).read().strip() or PAGE_TOKEN
+    except OSError: open(tf, "w").write(PAGE_TOKEN)
     port = int(a[a.index("--port") + 1]) if "--port" in a else 8765
+    class Srv(ThreadingHTTPServer):
+        # Python's default (allow_reuse_address) lets a second server share a port on Windows, so an old edit's page kept
+        # answering. Exclusive bind: a busy port fails, and the loop below moves to the next one.
+        allow_reuse_address = False
+        def server_bind(self):
+            import socket as _s
+            if hasattr(_s, "SO_EXCLUSIVEADDRUSE"): self.socket.setsockopt(_s.SOL_SOCKET, _s.SO_EXCLUSIVEADDRUSE, 1)
+            super().server_bind()
     for _ in range(20):   # an earlier edit's page may still hold the port: take the next free one
-        try: srv = ThreadingHTTPServer(("127.0.0.1", port), H); break
+        try: srv = Srv(("127.0.0.1", port), H); break
         except OSError: port += 1
     else: print("  no free port for the edit page"); sys.exit(1)
-    print(f"  live edit page: http://127.0.0.1:{port}   (edit folder {ED})", flush=True)
+    PORT = port
+    if vid: set_current(os.path.abspath(vid) if os.path.isfile(vid) else None, ed0)
+    print(f"  live edit page: http://127.0.0.1:{port}   " + (f"(edit folder {ED})" if ED else f"(start screen; uploads saved in {WORK})"), flush=True)
+    if "--open" in a:   # also open it in the computer's normal browser (other agents, or no browser pane)
+        import webbrowser; threading.Timer(0.8, lambda: webbrowser.open(f"http://127.0.0.1:{port}/")).start()
     srv.serve_forever()
 
 if __name__ == "__main__":

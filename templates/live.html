@@ -40,11 +40,71 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
 .go{margin-top:14px;background:var(--acc);color:#fff;border:0;border-radius:10px;padding:10px 22px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
 .go:disabled{opacity:.5;cursor:wait}.err{color:#E5484D;font-size:12px;margin-left:10px}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}.duo.one{grid-template-columns:1fr}
+[hidden]{display:none!important}
+@font-face{font-family:PopX;src:url(/assets/fonts/Poppins-ExtraBold.ttf)}
+@font-face{font-family:ISerif;src:url(/assets/fonts/InstrumentSerif-Italic.ttf)}
+@font-face{font-family:Arch;src:url(/assets/fonts/ArchivoBlack-Regular.ttf)}
+.top{position:sticky;top:0;z-index:30;background:var(--bg);display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0 8px;box-shadow:0 8px 8px -8px rgba(0,0,0,.08)}
+.newbtn{margin-left:auto;background:var(--acc);color:#fff;border:0;border-radius:12px;padding:10px 18px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 4px 14px rgba(47,111,237,.32);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.newbtn:hover{filter:brightness(1.08)}.newbtn svg{flex:none}
+.home{max-width:780px;margin:18px auto 30px}
+.back{background:none;border:0;color:var(--acc);font:inherit;font-size:13px;cursor:pointer;padding:0;margin-bottom:10px}
+.bigdrop{display:block;border:2px dashed #C9C5BB;border-radius:18px;background:#fff;padding:46px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.bigdrop.over,.bigdrop:hover{border-color:var(--acc);background:#F7FAFF}
+.bigdrop h2{font-size:23px;margin:12px 0 4px;color:var(--ink);font-weight:700}
+.bigdrop .pick{display:inline-block;margin-top:16px;background:var(--acc);color:#fff;border-radius:10px;padding:10px 24px;font-weight:700}
+.rawprog{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+.rawprog .bar{margin:8px 0 0}
+.home h3{font-size:14px;margin:22px 0 8px}
+.recent{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.recent button{border:1.5px solid var(--line);border-radius:12px;background:#fff;padding:6px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.recent button:hover{border-color:var(--acc)}.recent button.cur{border-color:var(--acc);background:#F3F7FF}
+.recent img{width:100%;height:170px;object-fit:cover;border-radius:8px;background:#E9E6DE;display:block}
+.recent b{display:block;font-size:12px;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.recent span{font-size:11px;color:var(--mute)}
+.caps{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+
+.recent .card2{position:relative}
+.recent .x{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:rgba(22,24,29,.72);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;opacity:0;transition:opacity .15s}
+.recent button:hover .x,.recent .x:focus{opacity:1}@media(hover:none){.recent .x{opacity:1}}
+.recent .x:hover{background:#E5484D}
+.modal{position:fixed;inset:0;background:rgba(22,24,29,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal .box{background:#fff;border-radius:16px;padding:20px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal h3{margin:0 0 8px;font-size:17px}.modal label{display:flex;gap:10px;align-items:flex-start;margin:14px 0 4px;font-size:13px;cursor:pointer}
+.modal input{margin-top:3px;width:17px;height:17px;accent-color:#E5484D}.modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.modal .row button{border:0;border-radius:10px;padding:9px 18px;font:inherit;font-weight:700;cursor:pointer}
+.modal .cancel{background:#EFEDE7;color:var(--ink)}.modal .del{background:#E5484D;color:#fff}.modal .del:disabled{opacity:.5;cursor:wait}
+.cap{display:flex;flex-direction:column;justify-content:flex-start;border:2px solid var(--line);border-radius:12px;padding:6px;background:#fff;cursor:pointer;font:inherit;text-align:left;color:inherit}
+.cap:hover{border-color:#C9C5BB}.cap.on{border-color:var(--acc);background:#F3F7FF}
+.cap .scr{height:126px;border-radius:8px;background:radial-gradient(120% 90% at 30% 20%,#7a7f88 0,#3d4048 45%,#24262b 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px;text-align:center}
+.cap>b{display:block;font-size:12px;margin-top:5px}.cap>span{font-size:11px;color:var(--mute)}
+.sws{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.sw{width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px var(--line);cursor:pointer;padding:0}
+.sw.on{box-shadow:0 0 0 3px var(--ink)}.sws:has(.sw:disabled) .sw{opacity:.35;cursor:not-allowed}
+
 .fcbox img{width:100%;border-radius:10px;border:1px solid var(--line);display:block}.fcbox .sub{display:block;margin-top:6px}
 .fcbtn{margin-top:8px;background:#16181D;color:#fff;border:0;border-radius:10px;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer}.fcbtn:disabled{opacity:.45}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mute);margin-top:4px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 </style></head><body><div class="wrap">
-<header><h1>Edit your video</h1><span class="sub" id="vname"></span><span class="pill" id="style" hidden></span><span class="sub" id="clock"></span></header>
+<header class="top"><h1>Edit your video</h1><span class="sub" id="vname"></span><span class="pill" id="style" hidden></span><span class="sub" id="clock"></span>
+ <button class="newbtn" id="newbtn" type="button" title="Start a new edit from a raw video"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M9 3v12M3 9h12" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>New video</button></header>
+<div class="home" id="home" hidden>
+ <button class="back" id="back" type="button" hidden></button>
+ <label class="bigdrop" id="bigdrop"><input type="file" id="rawfile" accept="video/*,.mov,.mkv" hidden>
+  <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><rect x="6" y="12" width="44" height="32" rx="8" fill="#F3F7FF" stroke="#2F6FED" stroke-width="2.5"/><path d="M24 22v12l10-6z" fill="#2F6FED"/></svg>
+  <h2>Drop your raw video here</h2>
+  <div class="sub">Straight from your phone or camera, no editing needed. MP4 or MOV, up to 8 GB.<br>It stays on this computer.</div>
+  <span class="pick">Choose a video</span></label>
+ <div class="rawprog" id="rawprog" hidden><b id="rawname"></b> <span class="sub" id="rawtxt"></span><div class="bar"><i id="rawfill"></i></div></div>
+ <div class="err" id="rawerr" style="margin:8px 0 0"></div>
+ <div class="sub" id="homenote" hidden style="margin-top:10px">Your current edit keeps going in the background. Open it again from Recent edits.</div>
+ <h3>Recent edits</h3><div class="recent" id="recent"></div>
+</div>
+<div class="modal" id="rmbox" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="rmtitle">
+ <h3 id="rmtitle">Remove this edit?</h3><div class="sub" id="rmname"></div>
+ <label><input type="checkbox" id="rmfiles"><span>Also move its working files to the Recycle Bin <b id="rmsize"></b><br><span class="sub">Frees the space. Your original video and the finished video stay where they are.</span></span></label>
+ <div class="err" id="rmerr" style="margin:6px 0 0"></div>
+ <div class="row"><button type="button" class="cancel" id="rmno">Cancel</button><button type="button" class="del" id="rmyes">Remove</button></div></div></div>
+<div id="main">
 <div class="bar"><i id="overall"></i></div>
 <div class="card choose" id="choose" hidden>
  <h3>1. Pick a style</h3><div class="tiles" id="tiles"></div>
@@ -58,9 +118,11 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
     <span class="sub" id="dropsub">or drag a file here</span></div>
    <div id="upbar" hidden style="height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px"><i id="upfill" style="display:block;height:100%;width:0;background:var(--acc)"></i></div>
    <div id="files" style="font-size:12px;margin-top:6px"></div></div></div>
- <h3>2. How long?</h3><div class="pills" id="lens"></div>
- <h3>3. Extras</h3><div class="pills" id="extras"></div>
- <h3>4. How do you want to finish?</h3><div class="pills" id="finish"></div><div class="sub" id="fcnote"></div>
+ <h3>2. Captions</h3><div class="caps" id="caps"></div>
+ <div class="sws" id="sws"></div><div class="sub" id="swnote" style="margin-top:6px"></div>
+ <h3>3. How long?</h3><div class="pills" id="lens"></div>
+ <h3>4. Extras</h3><div class="pills" id="extras"></div>
+ <h3>5. How do you want to finish?</h3><div class="pills" id="finish"></div><div class="sub" id="fcnote"></div>
  <button class="go" id="go" type="button">Start editing</button><span class="err" id="err"></span>
 </div>
 <div class="card" id="chosen" hidden style="margin-bottom:14px"></div>
@@ -68,7 +130,7 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
  <div class="card"><h2>What it is doing</h2><ul class="steps" id="steps"></ul></div>
  <div class="card"><div class="duo one" id="duo">
   <div><h2 id="vtitle">Your video</h2><video id="v" controls playsinline preload="metadata"></video><div class="vlabel" id="vlabel"></div></div>
-  <div class="fcbox" id="fcbox" hidden><h2>FilmCraft (touch-up editor)</h2><a id="fclink" target="_blank" title="Click to see it full size"><img id="fcimg" alt="FilmCraft window" style="cursor:zoom-in"></a><span class="sub" id="fcstate"></span>
+  <div class="fcbox" id="fcbox" hidden><h2>FilmCraft (touch-up editor)</h2><div id="fcph" style="border:1px solid var(--line);border-radius:10px;background:#1E1F24;aspect-ratio:16/10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#B9BCC4;font-size:12px;text-align:center;padding:10px"><svg width="140" height="64" viewBox="0 0 140 64" aria-hidden="true"><rect x="2" y="2" width="136" height="60" rx="6" fill="#2A2C33" stroke="#3A3D46"/><rect x="10" y="10" width="50" height="22" rx="3" fill="#3A3D46"/><rect x="66" y="10" width="64" height="22" rx="3" fill="#3A3D46"/><rect x="10" y="38" width="34" height="7" rx="2" fill="#2F6FED"/><rect x="46" y="38" width="52" height="7" rx="2" fill="#2F6FED"/><rect x="100" y="38" width="30" height="7" rx="2" fill="#2F6FED"/><rect x="10" y="49" width="70" height="6" rx="2" fill="#16A34A"/><rect x="84" y="49" width="46" height="6" rx="2" fill="#7C3AED"/><rect x="58" y="34" width="2" height="26" fill="#E5484D"/></svg><span id="fcphtxt">A picture of FilmCraft's timeline appears here once it opens</span></div><a id="fclink" target="_blank" title="Click to see it full size"><img id="fcimg" alt="FilmCraft window" style="cursor:zoom-in"></a><span class="sub" id="fcstate"></span>
    <button class="fcbtn" id="fcbtn" type="button">Open in FilmCraft</button></div></div></div>
 </div>
 <div class="card" style="margin-top:14px"><h2>Timeline (click to jump)</h2><div class="tl" id="tl"></div>
@@ -76,25 +138,49 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
 <div class="card" style="margin-top:14px"><h2 id="gtitle">Graphics</h2><div class="gfx" id="gfx"></div></div>
 <div class="card" style="margin-top:14px"><h2>What you said (struck out = cut)</h2><div class="words" id="words"></div></div>
 <div class="card" style="margin-top:14px"><h2>Log</h2><div class="notes" id="notes"></div></div>
-</div>
+</div></div>
 <script>
 const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 let S={}, WD={}, curSrc='', wordsKey='', shown=new Set();
 
 const TOKEN='__PAGE_TOKEN__';
-let pick={style:null,describe:'',length:'full',extras:null,finish:'auto'}, built=false;
-const EXTRAS=[['music','Music'],['zooms','Zoom-ins'],['stickers','Icon stickers'],['checklist','Recap checklist']];
+let pick={style:null,describe:'',length:'full',extras:null,finish:'auto',captions:null,cc:null,capT:false,ccT:false}, built=false;
+const CAPS=[['karaoke','Word highlight','the word being said lights up'],['pill','Pill','words on a coloured pill'],['duo','Big serif line','small words, key phrase big'],['stack','Stacked words','words pile up, key word big'],['minimal','Minimal','plain, soft shadow'],['none','No captions','']];
+const COLS=['#FFFFFF','#FFE45C','#D7FF3A','#2F6FED','#E8603C','#FF5FA2','#22D3EE'];
+const isLight=c=>{const h=c.slice(1);const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return .299*r+.587*g+.114*b>165};
+const capDef=k=>{const c=S.styles?.[k]?.caption||'karaoke';return c==='bold'?'karaoke':c};
+const colDef=k=>capDef(k)==='stack'?'#FFFFFF':(S.styles?.[k]?.accent||'#FFE45C').toUpperCase();
+function capSample(k,c){
+ const sh='text-shadow:0 2px 0 #000,2px 0 0 #000,-2px 0 0 #000,0 -2px 0 #000,0 3px 6px #0008';
+ if(k==='karaoke')return `<div style="font:16px/1.15 PopX;color:#fff;${sh}">I BUILT MY <span style="color:${c}">OWN</span> EDITOR</div>`;
+ if(k==='pill')return `<span style="background:${c};color:${isLight(c)?'#16181D':'#fff'};font:700 13px/1.25 Pop;padding:6px 12px;border-radius:14px;display:inline-block;max-width:92%">I built my own editor</span>`;
+ if(k==='duo')return `<div style="line-height:1.05;text-shadow:0 2px 6px #0009"><div style="font:700 12px Pop;color:#fff">I built my own</div><div style="font:30px ISerif;color:${c}">AI editor</div></div>`;
+ if(k==='stack')return `<div style="text-align:left;margin-right:auto;padding-left:12%;line-height:1.08;text-shadow:0 2px 6px #000a"><div style="font:700 15px Pop;color:#fff">i built</div><div style="font:700 15px Pop;color:#fff">my own</div><div style="font:23px Arch;color:${c}">editor</div></div>`;
+ if(k==='minimal')return `<div style="font:500 13px Pop;color:#fff;text-shadow:0 2px 6px #000c">I built my own AI editor</div>`;
+ return `<div style="color:#ffffff70;font-size:12px">Clean picture, no words on screen</div>`;
+}
+function capsUI(){
+ $('caps').innerHTML=CAPS.map(([k,l,d])=>`<button type="button" class="cap${k===pick.captions?' on':''}" data-k="${k}"><div class="scr">${capSample(k,pick.cc)}</div><b>${l}${k===capDef(pick.style)&&pick.style!=='describe'?' (this style)':''}</b><span>${d}</span></button>`).join('');
+ const noCol=pick.captions==='minimal'||pick.captions==='none';
+ $('sws').innerHTML='<span class="sub">Colour</span>'+COLS.map(c=>`<button type="button" class="sw${c===pick.cc?' on':''}" data-c="${c}" title="${c}" style="background:${c}" ${noCol?'disabled':''}></button>`).join('');
+ $('swnote').textContent=noCol?'This look has no highlight colour.':pick.captions==='pill'?'The pill takes this colour.':pick.captions==='stack'?'The big key word takes this colour.':'The highlighted words take this colour.';
+}
+
+const EXTRAS=[['music','Music'],['zooms','Zoom-ins'],['stickers','Icon stickers'],['checklist','Recap checklist'],['toon','Cartoon cut-aways']];
 function chooseUI(){
  const show=!S.choice&&!(S.plan&&S.plan._style); $('choose').hidden=!show;
  if(S.choice){const c=S.choice,l=c.style==='describe'?'Your own: '+c.describe:(S.styles?.[c.style]?.label||c.style);
-  $('chosen').hidden=false;$('chosen').innerHTML=`<b>Your choice:</b> ${esc(l)} &middot; ${c.length==='full'?'full length':c.length+' s'} &middot; ${esc(c.extras.join(', ')||'no extras')} &middot; ${c.finish==='filmcraft'?'then touch up in FilmCraft':'done for you'}`}
+  $('chosen').hidden=false;$('chosen').innerHTML=`<b>Your choice:</b> ${esc(l)} &middot; ${c.captions&&c.captions!=='style'?esc((CAPS.find(x=>x[0]===c.captions)||[0,c.captions])[1])+' captions':'style captions'}${c.caption_color&&c.captions!=='none'?` <i style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${c.caption_color};border:1px solid #0003;vertical-align:-1px"></i>`:''} &middot; ${c.length==='full'?'full length':c.length+' s'} &middot; ${esc(c.extras.join(', ')||'no extras')} &middot; ${c.finish==='filmcraft'?'then touch up in FilmCraft':'done for you'}`}
  const ik=S.intake?1:0; if(!show||!S.styles||built===ik+1)return; built=ik+1;
  const rec=S.intake?.recommended||{}; pick.style=pick.style||rec.style||'mixed';   // keep what the user already clicked
+ if(!pick.capT)pick.captions=capDef(pick.style); if(!pick.ccT)pick.cc=colDef(pick.style);
  if(!pick.extras)pick.extras=['music'].concat((rec.extras||[]).includes('zooms')?['zooms']:[]).concat(['stickers']);
- const ord=['studio','mixed','simple','news','tutorial'].filter(k=>S.styles[k]);
+ const ord=['studio','mixed','simple','animated','news','tutorial'].filter(k=>S.styles[k]);
  $('tiles').innerHTML=ord.map(k=>`<button type="button" class="tile" data-k="${k}"><img src="/assets/gallery/storyboard_${k}.jpg" onerror="if(this.dataset.f){this.style.display='none'}else{this.dataset.f=1;this.src='/assets/gallery/style_${k}.jpg'}" alt=""><b>${esc(S.styles[k].label)}${k===rec.style?' (recommended)':''}</b><span>${esc(S.styles[k].tagline)}</span></button>`).join('')
   +`<div class="tile" data-k="describe"><b>Describe your own</b><span>Tell me the look you want, or paste a link to a reel you like</span><textarea id="desc" placeholder="e.g. yellow pill captions, no music, fast cuts"></textarea></div>`;
- document.querySelectorAll('.tile').forEach(t=>t.onclick=e=>{pick.style=t.dataset.k;paint()});
+ document.querySelectorAll('.tile').forEach(t=>t.onclick=e=>{pick.style=t.dataset.k;if(pick.style!=='describe'){if(!pick.capT)pick.captions=capDef(pick.style);if(!pick.ccT)pick.cc=colDef(pick.style)}paint()});
+ $('caps').onclick=e=>{const b=e.target.closest('.cap');if(b){pick.captions=b.dataset.k;pick.capT=true;paint()}};
+ $('sws').onclick=e=>{const b=e.target.closest('.sw');if(b&&!b.disabled){pick.cc=b.dataset.c;pick.ccT=true;paint()}};
  $('desc').oninput=e=>{pick.describe=e.target.value;pick.style='describe';paint()};
  const cut=S.cut_seconds||S.intake?.cut_seconds||0;
  $('lens').innerHTML=[['full','Full'+(cut?' ('+Math.round(cut)+' s)':'')],['60','About 60 s'],['30','About 30 s']].map(([k,l])=>`<button type="button" data-k="${k}" ${k!=='full'&&cut&&cut<+k+5?'disabled':''}>${l}</button>`).join('');
@@ -112,17 +198,20 @@ function chooseUI(){
   if(pick.style==='news'&&!pick.materials){$('err').textContent='Add your screenshots first';return}
   if(pick.style==='describe'&&!pick.describe.trim()){$('err').textContent='Write what you want first, or pick a style';return}
   $('err').textContent='';$('go').disabled=true;
-  try{const r=await (await fetch('/api/choose',{method:'POST',headers:{'Content-Type':'application/json','X-Page-Token':TOKEN},body:JSON.stringify(pick)})).json();
-   if(!r.ok)throw 0}catch(e){$('err').textContent='Could not send - try again';$('go').disabled=false}};
+  try{const rs=await fetch('/api/choose',{method:'POST',headers:{'Content-Type':'application/json','X-Page-Token':TOKEN},body:JSON.stringify(Object.assign({},pick,{caption_color:pick.cc}))});
+   if(rs.status===403){stale();return}
+   const r=await rs.json(); if(!r.ok)throw 0}catch(e){$('err').textContent='Could not send - check the editor is still running, then try again';$('go').disabled=false}};
  paint();
 }
 let UP=[], UPPING=false;
+function stale(){ // the editor was restarted since this tab opened: reload to pick up its code, then the user presses Start again
+ $('err').textContent='The editor restarted - reloading this page, then press Start editing again'; setTimeout(()=>location.reload(),1500)}
 async function upload(files){
  for(const f of files){
   UPPING=true; $('upbar').hidden=false; $('upfill').style.width='0';
   const ok=await new Promise(res=>{const x=new XMLHttpRequest();x.open('POST','/api/upload');x.setRequestHeader('X-Page-Token',TOKEN);x.setRequestHeader('X-Filename',encodeURIComponent(f.name));
    x.upload.onprogress=e=>{if(e.lengthComputable)$('upfill').style.width=(e.loaded/e.total*100)+'%'};
-   x.onload=()=>{try{const r=JSON.parse(x.responseText);if(r.ok){UP.push(r.path);res(true)}else{$('err').textContent=r.error;res(false)}}catch(e){res(false)}};
+   x.onload=()=>{if(x.status===403){stale();return res(false)}try{const r=JSON.parse(x.responseText);if(r.ok){UP.push(r.path);res(true)}else{$('err').textContent=r.error;res(false)}}catch(e){res(false)}};
    x.onerror=()=>{$('err').textContent='Upload failed - try again';res(false)};x.send(f)});
   UPPING=false;
  }
@@ -144,20 +233,82 @@ function paint(){
  document.querySelectorAll('#lens button').forEach(b=>b.classList.toggle('on',b.dataset.k===pick.length));
  document.querySelectorAll('#extras button').forEach(b=>b.classList.toggle('on',pick.extras.includes(b.dataset.k)));
  document.querySelectorAll('#finish button').forEach(b=>b.classList.toggle('on',b.dataset.k===pick.finish));
+ if(pick.captions)capsUI();
 }
 function filmcraftUI(){
  const st=S.steps?.filmcraft, ready=S.steps?.done?.state==='done', want=S.choice?.finish==='filmcraft';
  const show=!!(st||want||(ready&&S.filmcraft_installed)); $('fcbox').hidden=!show; $('duo').classList.toggle('one',!show);
  if(!show)return;
- if(S.filmcraft_screen){const src='/e/'+S.filmcraft_screen;if(!$('fcimg').src.endsWith(encodeURI(src))){$('fcimg').src=src;$('fclink').href=src}$('fcimg').hidden=false}else $('fcimg').hidden=true;
+ if(S.filmcraft_screen){const src='/e/'+S.filmcraft_screen;if(!$('fcimg').src.endsWith(encodeURI(src))){$('fcimg').src=src;$('fclink').href=src}$('fcimg').hidden=false;$('fcph').hidden=true}else{$('fcimg').hidden=true;$('fcph').hidden=false}
  $('fcstate').textContent=st?(st.detail||''):(want?'Opens here after the edit is finished.':'Want to change something by hand? Open the edit in FilmCraft.');
  $('fcbtn').hidden=!(ready&&S.filmcraft_installed); $('fcbtn').disabled=S.filmcraft_running||st?.state==='doing';
  $('fcbtn').textContent=st?.state==='done'?'Open in FilmCraft again':'Open in FilmCraft';
 }
 $('fcbtn').onclick=async()=>{$('fcbtn').disabled=true;try{await fetch('/api/filmcraft',{method:'POST',headers:{'Content-Type':'application/json','X-Page-Token':TOKEN},body:'{}'})}catch(e){}};
 const fmt=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+let ED0=null, HOME=false;
+function showHome(on){
+ HOME=on; $('home').hidden=!on; $('main').hidden=on; $('newbtn').hidden=on;
+ $('back').hidden=!(on&&S.edit_dir); $('back').textContent='Back to '+(S.video||'my edit'); $('homenote').hidden=!(on&&S.edit_dir&&S.steps?.done?.state!=='done');
+ if(on){$('vname').textContent='';$('style').hidden=true;$('clock').textContent='';recentUI();window.scrollTo(0,0)}
+}
+$('newbtn').onclick=()=>showHome(true); $('back').onclick=()=>showHome(false);
+// the player never keeps talking when you can't see it: new-video screen, another tab, a minimised or closed window
+const hush=()=>{try{$('v').pause()}catch(e){}};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)hush()});
+window.addEventListener('pagehide',hush); window.addEventListener('beforeunload',hush);
+new MutationObserver(()=>{if($('main').hidden)hush()}).observe($('main'),{attributes:true,attributeFilter:['hidden']});
+function recentUI(){
+ const r=S.recent||[], k=JSON.stringify(r.map(x=>[x.i,x.name,x.status,x.current])); if(k===recentUI.k)return; recentUI.k=k;
+ $('recent').innerHTML=r.length?r.map(x=>`<button type="button" data-i="${x.i}" data-n="${esc(x.name)}" class="card2 ${x.current?'cur':''}"><span class="x" role="button" tabindex="0" title="Remove this edit" aria-label="Remove ${esc(x.name)}">&times;</span><img src="/rthumb?i=${x.i}&n=${encodeURIComponent(x.name)}" alt="" onerror="this.style.visibility='hidden'"><b title="${esc(x.name)}">${esc(x.name)}</b><span>${x.current?'open now, ':''}${esc(x.status)}</span></button>`).join(''):'<span class="sub">Your edits will show up here.</span>';
+}
+let RM=null;
+async function askRemove(i,name){
+ RM=i; $('rmname').textContent=name; $('rmfiles').checked=false; $('rmsize').textContent=''; $('rmerr').textContent=''; $('rmyes').disabled=false; $('rmbox').hidden=false; $('rmno').focus();
+ try{const r=await (await fetch('/api/size?i='+i,{cache:'no-store'})).json(); if(r.ok&&RM===i){$('rmsize').textContent='('+(r.mb>=1000?(r.mb/1000).toFixed(1)+' GB':r.mb+' MB')+')';
+  if(r.running){$('rmfiles').disabled=true;$('rmsize').textContent+=' - still being edited, so only the list entry can go now'}else $('rmfiles').disabled=false}}catch(e){}
+}
+$('rmno').onclick=()=>{$('rmbox').hidden=true;RM=null};
+$('rmbox').onclick=e=>{if(e.target===$('rmbox')){$('rmbox').hidden=true;RM=null}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('rmbox').hidden){$('rmbox').hidden=true;RM=null}});
+$('rmyes').onclick=async()=>{
+ if(RM===null)return; $('rmyes').disabled=true; $('rmerr').textContent=$('rmfiles').checked?'Moving the files to the Recycle Bin...':'';
+ try{const rs=await fetch('/api/forget',{method:'POST',headers:{'Content-Type':'application/json','X-Page-Token':TOKEN},body:JSON.stringify({i:RM,files:$('rmfiles').checked})});
+  if(rs.status===403){location.reload();return} const r=await rs.json();
+  if(!r.ok){$('rmerr').textContent=r.error||'Could not remove it';$('rmyes').disabled=false;return}
+  if(r.error){$('rmerr').textContent=r.error;$('rmyes').disabled=false;$('rmyes').textContent='Close';$('rmyes').onclick=()=>location.reload();return}
+  $('rmbox').hidden=true; RM=null; location.reload()}catch(e){$('rmerr').textContent='Could not reach the editor - is it still running?';$('rmyes').disabled=false}};
+$('recent').onclick=async e=>{const xb=e.target.closest('.x');if(xb){e.stopPropagation();const c=xb.closest('button');askRemove(+c.dataset.i,c.dataset.n);return}
+ const b=e.target.closest('button');if(!b)return;
+ if(b.classList.contains('cur')&&S.edit_dir){showHome(false);return}
+ try{const rs=await fetch('/api/open',{method:'POST',headers:{'Content-Type':'application/json','X-Page-Token':TOKEN},body:JSON.stringify({i:+b.dataset.i})});
+  if(rs.status===403){location.reload();return} const r=await rs.json(); if(r.ok)location.reload(); else $('rawerr').textContent=r.error||'Could not open it'}catch(e){$('rawerr').textContent='Could not reach the editor - is it still running?'}};
+function uploadRaw(f){
+ if(!f)return; $('rawerr').textContent='';
+ if(!/\.(mp4|mov|m4v|webm|mkv|avi)$/i.test(f.name)){$('rawerr').textContent='That is not a video file. Use an MP4 or MOV.';return}
+ $('rawprog').hidden=false; $('rawname').textContent=f.name; $('bigdrop').style.pointerEvents='none'; $('bigdrop').style.opacity=.55;
+ const mb=x=>(x/1048576).toFixed(x<1048576*10?1:0), t0=Date.now();
+ const x=new XMLHttpRequest(); x.open('POST','/api/new'); x.setRequestHeader('X-Page-Token',TOKEN); x.setRequestHeader('X-Filename',encodeURIComponent(f.name));
+ x.upload.onprogress=e=>{if(!e.lengthComputable)return;const p=e.loaded/e.total,s=(Date.now()-t0)/1000,left=p>0.02?Math.round(s/p-s):0;
+  $('rawfill').style.width=(p*100)+'%';$('rawtxt').textContent=`uploading ${Math.round(p*100)}% (${mb(e.loaded)} of ${mb(e.total)} MB)`+(left>2?`, about ${left} s left`:'')};
+ const fail=m=>{$('rawerr').textContent=m;$('rawprog').hidden=true;$('bigdrop').style.pointerEvents='';$('bigdrop').style.opacity=1};
+ x.onload=()=>{if(x.status===403)return fail('The editor restarted. Reload this page and drop the video again.');
+  try{const r=JSON.parse(x.responseText);if(!r.ok)return fail(r.error||'Upload failed');$('rawfill').style.width='100%';$('rawtxt').textContent='done. Opening your video...';setTimeout(()=>location.reload(),300)}catch(e){fail('Upload failed - try again')}};
+ x.onerror=()=>fail('Upload failed - is the editor still running?'); x.send(f);
+}
+$('rawfile').onchange=e=>uploadRaw(e.target.files[0]);
+{const dz=$('bigdrop');dz.ondragover=e=>{e.preventDefault();dz.classList.add('over')};dz.ondragleave=()=>dz.classList.remove('over');
+ dz.ondrop=e=>{e.preventDefault();e.stopPropagation();dz.classList.remove('over');uploadRaw(e.dataTransfer.files[0])}}
+$('recent').addEventListener('keydown',e=>{const xb=e.target.closest('.x');if(xb&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();const c=xb.closest('button');askRemove(+c.dataset.i,c.dataset.n)}});
+window.addEventListener('dragover',e=>e.preventDefault());   // a file dropped outside a drop zone must not replace the page
+window.addEventListener('drop',e=>{e.preventDefault();if(HOME&&e.dataTransfer.files[0])uploadRaw(e.dataTransfer.files[0])});
 async function poll(){
  try{S=await (await fetch('/api/state',{cache:'no-store'})).json()}catch(e){setTimeout(poll,1500);return}
+ if(S.home){poll.empty=1;if(!HOME)showHome(true);else recentUI();$('back').hidden=true;setTimeout(poll,1500);return}
+ if(poll.empty&&HOME&&$('rawprog').hidden){location.reload();return}   // an empty start screen: a video arrived (another tab or the agent), show it
+ if(ED0===null)ED0=S.edit_dir;
+ else if(S.edit_dir!==ED0){location.reload();return}   // another tab switched the editor to a different video
+ if(HOME){recentUI();$('back').textContent='Back to '+(S.video||'my edit');$('back').hidden=false;setTimeout(poll,1500);return}
  $('vname').textContent=S.video||''; if(S.style){$('style').hidden=false;$('style').textContent=S.style}
  if(S.start)$('clock').textContent=(S.steps&&S.steps.done&&S.steps.done.state==='done'?'finished in ':'')+fmt(((S.steps?.done?.t1)||Date.now()/1000)-S.start);
  chooseUI(); filmcraftUI(); steps(); video(); timeline();

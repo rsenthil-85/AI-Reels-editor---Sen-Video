@@ -266,6 +266,76 @@ async function build(){
   render=t=>{const o=1-outT(t),k=seg(t,0,.3),e=document.getElementById('bdg');e.style.opacity=Math.min(1,k*2)*o;e.style.transform=`translateX(-50%) translateY(${(1-back(k))*-fs*2}px)`;
    const d=document.getElementById('bdot');if(d)d.style.opacity=.45+.55*Math.abs(Math.sin(t*3.2))};
  }
+ else if(TYPE==='cartoon'){ // hand-drawn stick-figure cut-away (original art). scene: struggle | relief. label: short sign text
+  const scene=P('scene')||'struggle', lab=P('label')||'';
+  const ink='#1E1E24', lw=7;
+  const sx=W/1080, sy=H/1920;
+  const bgSVG=`<defs><linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4F0F8"/><stop offset="1" stop-color="#CFE2EF"/></linearGradient></defs>
+   <rect width="1080" height="1920" fill="url(#wall)"/>
+   <g stroke="${ink}" stroke-width="${lw}" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="620" y="250" width="380" height="330" rx="14" fill="#BFE0F5"/>
+    <path d="M640 560 L640 470 L690 470 L690 430 L740 430 L740 500 L790 500 L790 400 L850 400 L850 470 L900 470 L900 440 L960 440 L960 560 Z" fill="#9CC3DE" stroke-width="5"/>
+    <line x1="810" y1="250" x2="810" y2="580" stroke-width="5"/>
+    <rect x="120" y="300" width="200" height="150" rx="10" fill="#F6E7C8"/><path d="M150 420 L200 360 L240 400 L270 370 L300 420" fill="none" stroke-width="5"/>
+    <line x1="0" y1="1580" x2="1080" y2="1580" stroke-width="6"/>
+</g>`;
+  const front=`<g stroke="${ink}" stroke-width="${lw}" stroke-linejoin="round">
+    <rect x="390" y="1010" width="300" height="180" rx="16" fill="#8E94A0"/><circle cx="540" cy="1098" r="22" fill="#B7BCC6" stroke-width="5"/>
+    <rect x="390" y="1010" width="300" height="10" rx="5" fill="${scene==='relief'?'#7EE0C3':'#9BB8D8'}" stroke="none"/>
+    <rect x="150" y="1180" width="780" height="70" rx="12" fill="#B9773E"/>
+    <rect x="190" y="1250" width="60" height="330" fill="#9A5F2E"/><rect x="830" y="1250" width="60" height="330" fill="#9A5F2E"/></g>`;
+  S.innerHTML=`<svg id="cv" viewBox="0 0 1080 1920" width="${W}" height="${H}" style="position:absolute;inset:0"></svg>`;
+  const cv=document.getElementById('cv');
+  const head=(x,y,mood,t)=>{ // round head, our own face set
+   const eyes=mood==='happy'?`<path d="M${x-34} ${y-10} q14 -16 28 0 M${x+8} ${y-10} q14 -16 28 0" fill="none"/>`
+    :`<circle cx="${x-22}" cy="${y-8}" r="8" fill="${ink}"/><circle cx="${x+22}" cy="${y-8}" r="8" fill="${ink}"/>`;
+   const brows=mood==='worried'?`<path d="M${x-42} ${y-40} L${x-10} ${y-30} M${x+42} ${y-40} L${x+10} ${y-30}" fill="none"/>`:'';
+   const mouth=mood==='happy'?`<path d="M${x-30} ${y+22} q30 34 60 0 z" fill="#E86A6A"/>`
+    :`<path d="M${x-28} ${y+34} q9 -10 18 0 q9 10 18 0 q9 -10 18 0" fill="none"/>`;
+   return `<circle cx="${x}" cy="${y}" r="78" fill="#fff"/>${brows}${eyes}${mouth}`;};
+  const person=(t,mood,pose)=>{ // navy t-shirt stick figure seated behind the desk
+   const bob=pose==='relax'?Math.sin(t*2)*4:Math.sin(t*14)*3, hx=540, hy=760+bob;
+   let arms;
+   if(pose==='type'){const a=Math.sin(t*22)*14, b=Math.cos(t*22)*14;
+    arms=`<path d="M455 920 Q410 980 440 ${1010+a}" fill="none"/><path d="M625 920 Q670 980 640 ${1010+b}" fill="none"/><circle cx="440" cy="${1012+a}" r="18" fill="#fff"/><circle cx="640" cy="${1012+b}" r="18" fill="#fff"/>`;}
+   else arms=`<path d="M455 925 L372 800 L478 742" fill="none"/><path d="M625 925 L708 800 L602 742" fill="none"/>`;
+   return `<g stroke="${ink}" stroke-width="${lw}" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M440 1180 L455 900 Q540 850 625 900 L640 1180 Z" fill="#2B3E5C"/>${arms}${head(hx,hy,mood,t)}</g>`;};
+  const clock=(t,speed)=>{const a=t*speed, b=t*speed/12;
+   return `<g stroke="${ink}" stroke-width="${lw}" stroke-linecap="round"><circle cx="540" cy="360" r="95" fill="#fff"/>
+    <line x1="540" y1="360" x2="${540+Math.sin(a)*70}" y2="${360-Math.cos(a)*70}"/><line x1="540" y1="360" x2="${540+Math.sin(b)*45}" y2="${360-Math.cos(b)*45}" stroke-width="10"/>
+    <circle cx="540" cy="360" r="8" fill="${ink}"/></g>`;};
+  const clip=(x,y,r,s=1)=>`<g transform="translate(${x} ${y}) rotate(${r}) scale(${s})" stroke="${ink}" stroke-width="5"><rect x="-55" y="-34" width="110" height="68" rx="8" fill="#F4C84A"/>
+   <rect x="-44" y="-22" width="26" height="44" fill="#fff" stroke-width="3"/><rect x="-13" y="-22" width="26" height="44" fill="#fff" stroke-width="3"/><rect x="18" y="-22" width="26" height="44" fill="#fff" stroke-width="3"/></g>`;
+  const sign=lab?`<g transform="translate(150 1035) rotate(-4)"><rect x="-10" y="-60" width="${Math.max(170,lab.length*22)}" height="84" rx="8" fill="#FFF3A6" stroke="${ink}" stroke-width="5"/>
+   <text x="${Math.max(170,lab.length*22)/2-10}" y="-6" font-family="Pop" font-weight="700" font-size="34" text-anchor="middle" fill="${ink}">${esc(lab)}</text></g>`:'';
+  const robot=(t)=>{const y=980+Math.sin(t*6)*6, a=Math.sin(t*20)*10;
+   return `<g stroke="${ink}" stroke-width="${lw}" stroke-linecap="round" stroke-linejoin="round" transform="translate(820 0)">
+    <line x1="0" y1="${y-120}" x2="0" y2="${y-80}"/><circle cx="0" cy="${y-128}" r="12" fill="#FF6B6B"/>
+    <rect x="-70" y="${y-80}" width="140" height="110" rx="30" fill="#fff"/><rect x="-50" y="${y-62}" width="100" height="62" rx="16" fill="#2B3E5C"/>
+    <circle cx="-20" cy="${y-31}" r="10" fill="#7EE0C3" stroke="none"/><circle cx="20" cy="${y-31}" r="10" fill="#7EE0C3" stroke="none"/>
+    <rect x="-55" y="${y+30}" width="110" height="150" rx="24" fill="#E8EEF5"/><path d="M-55 ${y+70} Q-140 ${y+120} -190 ${y+150+a}" fill="none"/><circle cx="-192" cy="${y+154+a}" r="16" fill="#fff"/></g>`;};
+  render=t=>{
+   const o=1-outT(t), k=eo(seg(t,0,.3)); let g='';
+   if(scene==='struggle'){
+    g+=clock(t,9);
+    const n=Math.min(9,1+Math.floor(t*3)); for(let i=0;i<n;i++) g+=clip(780+((i*37)%60)-30, 1140-i*42, (i%2?-8:9));   // pile of clips grows
+    g+=person(t,'worried','type');
+    for(let i=0;i<3;i++){const ph=(t*1.6+i/3)%1; g+=`<path d="M${625+i*14} ${700+ph*160} q-12 22 0 30 q12 -8 0 -30z" fill="#7CC6F2" stroke="${ink}" stroke-width="4" opacity="${1-ph}"/>`;}  // sweat drops
+   } else {
+    g+=clock(t,1.2);
+    g+=person(t,'happy','relax');
+    g+=robot(t);
+    // clips fly from the pile into a finished video card with a tick
+    const card=`<g transform="translate(540 560)" stroke="${ink}" stroke-width="${lw}"><rect x="-150" y="-95" width="300" height="190" rx="22" fill="#fff"/>
+      <path d="M-25 -40 L35 0 L-25 40 Z" fill="#2F6FED" stroke-linejoin="round"/></g>`;
+    const tick=seg(t,1.6,2.0)>0?`<g transform="translate(680 470) scale(${back(seg(t,1.6,2.0))})" stroke="${ink}" stroke-width="${lw}"><circle r="46" fill="#16A34A"/><path d="M-20 0 L-5 16 L22 -16" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/></g>`:'';
+    let fly=''; for(let i=0;i<5;i++){const q=eo(seg(t,.2+i*.25,.8+i*.25)); if(q<=0||q>=1)continue; fly+=clip(800+(540-800)*q, 1100+(560-1100)*q-Math.sin(q*Math.PI)*220, q*360, 1-q*.6);}
+    g+=card+fly+tick;
+    for(let i=0;i<6;i++){const ph=(t*.9+i/6)%1, ang=i*1.05; g+=`<path d="M0 -16 L4 -4 L16 0 L4 4 L0 16 L-4 4 L-16 0 L-4 -4Z" transform="translate(${540+Math.cos(ang)*(190+ph*60)} ${560+Math.sin(ang)*(130+ph*40)}) scale(${1-ph})" fill="#FFD84A" stroke="${ink}" stroke-width="3"/>`;}
+   }
+   cv.innerHTML=bgSVG+g+front+sign; cv.style.opacity=o; cv.style.transform=`scale(${1.04-.04*k})`;};
+ }
  else if(TYPE==='wipe'){ // transition: accent + white diagonal bars sweep across (use dur ~0.45)
   S.innerHTML=`<div id="b1" class="abs" style="top:-50%;height:200%;width:${W*.35}px;background:var(--acc);transform:skewX(-18deg)"></div>
    <div id="b2" class="abs" style="top:-50%;height:200%;width:${W*.08}px;background:#fff;transform:skewX(-18deg)"></div>`;

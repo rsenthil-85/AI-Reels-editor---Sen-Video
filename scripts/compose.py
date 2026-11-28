@@ -118,9 +118,15 @@ def main():
         if params.get("_tpl") == "motionbg.html":   # same look = same background: render once per PC, reuse forever
             import hashlib
             out = os.path.join(CACHE, "bg_" + hashlib.sha1(json.dumps([params, w, h, round(d, 2)], sort_keys=True).encode()).hexdigest()[:16] + ".mp4")
+        if params.get("type") == "toon" and "cast" not in params:   # this video's own cartoon cast (scripts/toon_cast.py)
+            cp = os.path.join(base, "toon_cast.json")
+            if not os.path.exists(cp):
+                subprocess.run([sys.executable, os.path.join(HERE, "toon_cast.py"), base], capture_output=True)
+            if os.path.exists(cp): params = dict(params, cast=json.dumps(json.load(open(cp, encoding="utf-8")), separators=(",", ":")))
         cache = out + ".json"; key = json.dumps([params, w, h, round(d, 2)], sort_keys=True)
         if os.path.exists(out) and os.path.exists(cache) and open(cache).read() == key: return out  # unchanged: reuse
-        tpl = "title3d.html" if params.get("type") == "title3d" else "gfx.html"
+        tpl = "title3d.html" if params.get("type") == "title3d" else "toon.html" if params.get("type") == "toon" else "gfx.html"
+        if params.get("type") == "toon": params.setdefault("fps", 24)   # the cartoon style moves on twos at a 24 fps base
         jobs.append((["node", os.path.join(HERE, "render_gfx.mjs"), out, json.dumps(params), "--w", str(w), "--h", str(h),
                       "--dur", f"{d:.2f}", "--template", tpl] + (["--fps", str(params["fps"])] if params.get("fps") else []), cache, key))
         return out
@@ -192,7 +198,7 @@ def main():
     if jobs:   # all graphics in ONE browser (render_gfx --batch); still frames are reused, not re-captured
         import time as _t; t0 = _t.time()
         batch = [{"out": j[0][2], "params": json.loads(j[0][3]), "w": int(j[0][5]), "h": int(j[0][7]), "dur": float(j[0][9]),
-                  "template": j[0][11], "opaque": j[0][11] == "motionbg.html" or json.loads(j[0][3]).get("type") in ("device", "endcard"),
+                  "template": j[0][11], "opaque": j[0][11] in ("motionbg.html", "toon.html") or json.loads(j[0][3]).get("type") in ("device", "endcard"),
                   "fps": int(json.loads(j[0][3]).get("fps", 30))} for j in jobs]
         bj = os.path.join(work, "gfx_jobs.json"); json.dump(batch, open(bj, "w"))
         LL.step(base, "graphics", "doing", f"0 of {len(jobs)} graphics", gfx_total=len(jobs))
@@ -394,10 +400,10 @@ def main():
             if P.get("captions", reel) and words:  # default: burned captions on reels, off for long-form (upload the .srt instead)
                 ass = os.path.join(work, f"captions_{tag}.ass")
                 open(ass, "w", encoding="utf-8").write(CAP.build(words, W, H, P.get("caption_y", 0.66 if reel else 0.84), P.get("caption_fs", 70 if reel else 54),
-                                                                 3, P.get("accent", "#E8603C"), top_win, TOP_H if reel else None, set(P.get("emph", [])),
-                                                                 P.get("caption_style", "pill"), [(c["t0"], c["t1"]) for c in cards + [x for x in inserts if x.get("mode") == "full" and x.get("gfx", {}).get("type") in ("device", "checklist", "counter", "diagram")]],
+                                                                 3, P.get("caption_acc") or P.get("accent", "#E8603C"), top_win, TOP_H if reel else None, set(P.get("emph", [])),
+                                                                 P.get("caption_style", "pill"), [(c["t0"], c["t1"]) for c in cards + [x for x in inserts if x.get("mode") == "full" and x.get("gfx", {}).get("type") in ("device", "checklist", "counter", "diagram", "toon")]],
                                                                  P.get("ink", "#16181D"),
-                                                                 light_split=bool(inset and _light(P.get("panel_base", "#F4F2EC")))))
+                                                                 light_split=bool(inset and _light(P.get("panel_base", "#F4F2EC"))), key_color=P.get("caption_acc"), stack_y=P.get("stack_y")))
                 f.append(f"[{cur}]subtitles=captions_{tag}.ass:fontsdir=fonts[vc]"); cur = "vc"
             if mode == "video": f.append(f"[{cur}]trim=start={S:.3f}:end={E:.3f},setpts=PTS-STARTPTS[vout]")
             elif preview: f.append(f"[{cur}]scale=-2:{540 if reel else 360}[vout]")

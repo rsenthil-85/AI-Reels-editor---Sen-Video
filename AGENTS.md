@@ -55,7 +55,7 @@ Key data files (all inside `<video name>_edit/` next to the video):
 `live.json` (progress), `work_compose/` (renders, args_*.json with the exact ffmpeg commands).
 
 Styles: `styles/edit_styles.json` (Clean cards = `mixed`, Bold B-roll = `studio`, Face and captions = `simple`,
-AI News = `news`, Screen tutorial = `tutorial`),
+AI News = `news`, Screen tutorial = `tutorial`, Bold + Animated = `animated`),
 `styles/themes.json` (colour looks), `styles/presets.json` (per content type).
 
 ## Run it without Claude
@@ -64,9 +64,11 @@ Any agent can drive the same flow with a shell:
 
 ```powershell
 $PY = ".venv\Scripts\python.exe"                       # made by install.ps1
-& $PY scripts\live.py "D:\clips\video.mp4"              # edit page -> open http://127.0.0.1:8765 in any browser
+& $PY scripts\live.py "D:\clips\video.mp4" --open       # edit page, opened in the normal browser (a new tab per video)
 & $PY scripts\autoedit.py "D:\clips\video.mp4" --analyze
-# the user presses Start editing -> D:\clips\video_edit\choice.json appears
+# or: & $PY scripts\live.py --home "D:\clips"        # start screen: the user uploads a raw video in the browser
+& $PY scripts\wait_choice.py --timeout 3600          # blocks until Start editing; prints video, edit_dir, choice
+# (if no agent runs wait_choice.py, the page makes the automatic edit itself after Start editing)
 # map choice.json to answers.json (see SKILL.md section 0, step 3), then:
 & $PY scripts\autoedit.py "D:\clips\video.mp4" --answers "D:\clips\video_edit\answers.json" --no-render
 # add inserts/overlays to plan.json (the judgement part: cards, stickers, text in the speaker's own words)
@@ -129,14 +131,19 @@ Claude-specific tools in `SKILL.md` and their plain equivalents:
 
 ## Status (keep this section current)
 
-Version: see `CHANGELOG.md` (1.9.2 at the time of writing).
+Version: see `CHANGELOG.md` (1.12.0 at the time of writing).
 
-Done: five styles (Clean cards, Bold B-roll, Face and captions, AI News, Screen tutorial) + describe-your-own, edit page with live progress and FilmCraft panel, retake and filler
+Done: six styles (Bold + Animated, Bold B-roll, Clean cards, Face and captions, AI News, Screen tutorial) + describe-your-own, cartoon scenes (Lemo mid-century engine, templates/toon/), edit page with live progress and FilmCraft panel, retake and filler
 cutting, clean voice, five caption styles, graphics library (title, chapter, lower, counter, prompt, diagram,
 checklist, sticker, band, bignum, device, ctaword, endcard, comment, step header), music + SFX, green-screen
 swap with fringe fix, FilmCraft hand-off, render 44% faster than v1.8, README with screenshots.
+Edit page start screen (upload, New video, Recent edits with remove), caption layout and colour step,
+`wait_choice.py` hand-off with automatic fallback, language detection with large-v3-turbo for Indian languages
+(English-meaning captions), per-video cartoon cast (`toon_cast.py`).
 
 Next:
+- Native-script captions for Indian languages (Whisper writes English meaning; an Indic model would need a licence check).
+- Every style shows a graphic in the first second.
 - Replace the illustrated gallery with the user's AI-generated storyboard images (one per style, in
   `E:\Reel editing test- real footage\template_images\`; Clean cards is there, Bold B-roll and Face and captions
   to come). Rebuild the edit page tiles and README from them.

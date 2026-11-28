@@ -1,6 +1,6 @@
 """autoedit.py - raw video to finished edit in two phases, with a short style brief in between.
 
-  Phase 1 (analyse, ~1 min):  python autoedit.py input.mp4 --analyze [--drop "a-b,..."] [--lang en]
+  Phase 1 (analyse, ~1 min):  python autoedit.py input.mp4 --analyze [--drop "a-b,..."] [--lang auto|en|ta|hi...]
       transcribe -> analyse -> cut dead air/fillers/retakes -> <name>_edit/analysis.json + intake.json + sheet.jpg
       intake.json holds the recommended answer for every brief question (see SKILL.md "Intake").
   Phase 2 (edit):             python autoedit.py input.mp4 --answers answers.json [--preview] [--no-render]
@@ -65,7 +65,7 @@ def main():
     # ---- phase 1: transcribe, analyse, cut (all cached)
     LL.step(work, "analyse", "doing", "turning your speech into words")
     if not os.path.exists(W("words.json")):
-        run([PY, os.path.join(HERE, "transcribe.py"), src, work, "--model", g("--model", "small"), "--lang", g("--lang", "en")])
+        run([PY, os.path.join(HERE, "transcribe.py"), src, work, "--lang", g("--lang", "auto")] + (["--model", g("--model")] if g("--model") else []))
     if not os.path.exists(W("analysis.json")) or "--analyze" in a:
         run([PY, os.path.join(HERE, "analyze.py"), src, work, "--words", W("words.json")])
     an = load(W("analysis.json"))
@@ -91,7 +91,8 @@ def main():
         LL.step(work, "cut", "done", f"{an['duration']:.0f} s down to {intake['cut_seconds']:.0f} s ({max(0, len(segs) - 1)} gaps removed)",
                 cut_seconds=intake["cut_seconds"])
     else: LL.step(work, "cut", "done", "no speech, nothing to cut")
-    if "--analyze" in a: LL.step(work, "style", "doing", "waiting for your style choice")
+    if "--analyze" in a and not os.path.exists(W("choice.json")):   # the user may have pressed Start while we analysed: keep their choice
+        LL.step(work, "style", "todo", "waiting for you: pick a style above and press Start editing")
     if "--analyze" in a:
         # auto face framing: start it now in the background; it finishes while the user answers the questions
         if not os.path.exists(W("face.json")) or g("--drop") is not None:
@@ -126,7 +127,9 @@ def main():
     plan["layout"] = sty["layout"]; plan["grade"] = sty["grade"]; plan["_style"] = ans.get("style", "mixed")
     plan["_style_graphics"] = sty["graphics"]
     if sty.get("split_style"): plan["split_style"] = sty["split_style"]
-    if sty["layout"] == "face": plan["caption_fs"] = 92          # face only: captions carry the screen, make them bigger
+    if ans.get("caption_color"): plan["caption_acc"] = ans["caption_color"]   # picked on the edit page
+    if sty["layout"] == "face": plan["caption_fs"] = 92
+    if sty["layout"] == "face" and plan["caption_style"] == "stack": plan["stack_y"] = 0.70   # under the face, not across it          # face only: captions carry the screen, make them bigger
     if sty["layout"] == "tutorial": plan["caption_y"] = 0.655           # between the zoomed screen (top 4-62%) and the face bubble
     if sty.get("needs"): plan["_todo"].append(f"{sty['needs']}: use the files the user named (choice.json materials); ask if none")
     if sty.get("accent"): plan["accent"] = sty["accent"]

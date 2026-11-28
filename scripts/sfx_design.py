@@ -50,6 +50,8 @@ def events(inserts, overlays, punch, words, density="high", caption_groups=None)
             n = len([x for x in str(g.get("rows", "")).split("|") if x])
             for i in range(n): ev.append((t0 + 0.6 + i * 0.2, "softclick", -20))
             if g.get("cursor"): ev.append((t0 + (t1 - t0) * 0.62, "click", -14))
+        elif typ == "toon":                                # cartoon cut-away: a pop when its tick / tags land
+            ev.append((t0 + (t1 - t0) * 0.7, "stamp", -16))
         elif typ == "endcard":
             ev.append((t0 + 0.5, "ding", -16))
     for ov in overlays:

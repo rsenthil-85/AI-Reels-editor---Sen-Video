@@ -62,5 +62,19 @@
   "uses_look": true,
   "needs": "screen_recording (optional)",
   "graphics": "intro on the face; run scripts/screen_zoom.py on the screen recording (--top 0.04 --area 0.58) and use it as an insert mode bubble with src screen_vertical.mp4 (ss to line it up with what you say); badge overlays 'Step n of m' (tone blue) at each step; a prompt graphic when a prompt is read out; result on the face"
+ },
+ "animated": {
+  "label": "Bold + Animated",
+  "tagline": "Bold B-roll with an animated cartoon scene for every point",
+  "question": "Our own style: the Bold B-roll hook band, warm face and stacked captions, but every point you make is acted out by an animated cartoon scene with a big lime number, then the glowing comment call-out and an end card. The cartoon look is picked for your video (or from a reel you link).",
+  "learned_from": "Bold B-roll (ref 7) + Lemo-Opuscar animation styles (2026-11-28)",
+  "layout": "studio",
+  "caption": "stack",
+  "grade": "warm",
+  "transitions": false,
+  "uses_look": false,
+  "accent": "#D7FF3A",
+  "lemo_style": "midcentury-toon",
+  "graphics": "0-4 s: hook = insert mode top with gfx {type: toon, scene: struggle|machine|...} + band overlay (green l1, italic l2); then the face; every point = insert mode full {type: toon, scene, l1/l2/items, dur} 2.5-5 s + bignum overlay; scene by meaning: a problem / time wasted -> struggle; the fix / AI does it -> relief; how something works -> machine; a comparison -> beforeafter; a list of steps -> checklist; ctaword on the comment line; endcard outro"
  }
 }

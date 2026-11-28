@@ -6,7 +6,7 @@ make_sfx.py's sound effects): MIT.
 ## Bundled third-party code (vendor/)
 | Component | Licence |
 |---|---|
-| lemo-opuscar (LemoLab) | MIT |
+| lemo-opuscar (LemoLab) | MIT | (its midcentury-toon engine is bundled in templates/toon/, licence: templates/toon/LICENSE-lemo-opuscar.txt) |
 | pixelfx (patch-gg) - minus `gallery/fonts` (Patch's own font, not MIT, removed) | MIT (see its NOTICE.md) |
 | mcp-for-blender (Siddharth Ahuja) | MIT (+ its TERMS_AND_CONDITIONS.md on telemetry) |
 | ClaudeAnimationBase (John Heibel) | MIT |
@@ -28,6 +28,7 @@ make_sfx.py's sound effects): MIT.
 |---|---|---|
 | three | MIT | yes |
 | faster-whisper, CTranslate2, Whisper "small" weights | MIT | yes |
+| Whisper large-v3-turbo weights (mobiuslabsgmbh/faster-whisper-large-v3-turbo) - non-English speech, downloaded once on request | MIT | no |
 | librosa | ISC | yes (beat sync) |
 | fonttools | MIT | yes |
 | numpy, soundfile | BSD-3 | yes |

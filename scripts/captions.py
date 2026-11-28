@@ -24,6 +24,12 @@ def ass_time(t):
 def ass_color(hexc, alpha="00"):
     h = hexc.lstrip("#"); return f"&H{alpha}{h[4:6]}{h[2:4]}{h[0:2]}&"
 
+PILL_INK = r"\1c&H1D1816&"   # dark words on a light pill (yellow, lime, white)
+
+def light(hexc):
+    h = hexc.lstrip("#"); r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return 0.299 * r + 0.587 * g + 0.114 * b > 165
+
 def pill(w, h):
     r = h / 2
     return (f"m {r:.0f} 0 l {w - r:.0f} 0 b {w:.0f} 0 {w:.0f} {h:.0f} {w - r:.0f} {h:.0f} "
@@ -52,7 +58,7 @@ def group(words, max_words=3, max_chars=16):
             out.append(cur); cur = []
     return out
 
-def build(words, W, H, y=0.66, fs=70, max_words=3, acc="#E8603C", split=(), seam=None, emph=(), style="pill", cards=(), ink="#16181D", light_split=False):
+def build(words, W, H, y=0.66, fs=70, max_words=3, acc="#E8603C", split=(), seam=None, emph=(), style="pill", cards=(), ink="#16181D", light_split=False, key_color=None, stack_y=None):
     """style: pill | bold (white caps, black outline, active word in accent) | minimal (sentence case, soft shadow)
     | duo (style refs: small plain words + the key phrase on its own line in big italic serif, accent colour).
     cards: windows with a full-screen card on screen - captions move low (y 0.86) and use dark `ink` text."""
@@ -86,7 +92,7 @@ def build(words, W, H, y=0.66, fs=70, max_words=3, acc="#E8603C", split=(), seam
             pop = r"\fscx72\fscy72\t(0,90,\fscx108\fscy108)\t(90,170,\fscx100\fscy100)" if pi == 0 else ""
             if style == "pill":
                 ev.append(f"Dialogue: 0,{ass_time(s0)},{ass_time(e0)},Pill,,0,0,0,,{{\\an5\\pos({x:.0f},{cy:.0f})\\bord0\\shad0\\1c{ass_color(acc)}\\1a&H10&{pop}\\p1}}{pill(pw, ph)}")
-                ev.append(f"Dialogue: 1,{ass_time(s0)},{ass_time(e0)},Cap,,0,0,0,,{{\\an5\\pos({x:.0f},{cy + size * 0.04:.0f})\\fs{size}{pop}}}{text}")
+                ev.append(f"Dialogue: 1,{ass_time(s0)},{ass_time(e0)},Cap,,0,0,0,,{{\\an5\\pos({x:.0f},{cy + size * 0.04:.0f})\\fs{size}{pop}{PILL_INK if light(acc) else ''}}}{text}")
             elif style == "bold":  # one event per spoken word: that word in the accent colour (karaoke look)
                 toks = [clean(x["w"]) for x in g]
                 for wi, wd in enumerate(g):
@@ -123,14 +129,14 @@ def build(words, W, H, y=0.66, fs=70, max_words=3, acc="#E8603C", split=(), seam
                 core = [re.sub(r"[^a-z0-9$]", "", r) for r in raw]
                 key = max(range(len(raw)), key=lambda k: (is_emph(g[k]["w"], emph), len(core[k]))) if raw else -1
                 if len(core[key]) < 4 and not is_emph(g[key]["w"], emph): key = -1
-                bx = W * 0.30; by = (0.72 * H if oncard else 0.62 * H if (insplit and seam) else 0.56 * H)   # split: below the hook band
+                bx = W * 0.30; by = (0.72 * H if oncard else 0.62 * H if (insplit and seam) else (stack_y or 0.56) * H)   # split: below the hook band
                 for wi, wd in enumerate(g):
                     ws = s0 if wi == 0 else max(s0, wd["s"])
                     we = min(e0, g[wi + 1]["s"]) if wi + 1 < len(g) else e0
                     if we - ws < 0.02: continue
                     lines = []
                     for k in range(wi + 1):
-                        fnt = (rf"\fnArchivo Black\b0\fs{round(size * 1.4)}" if k == key else rf"\fnPoppins\b1\fs{round(size * 1.1)}")
+                        fnt = (rf"\fnArchivo Black\b0\fs{round(size * 1.4)}" + (rf"\1c{ass_color(key_color)}" if key_color and not oncard else "") if k == key else rf"\fnPoppins\b1\fs{round(size * 1.1)}")
                         pp = r"\fscx70\fscy70\t(0,110,\fscx100\fscy100)" if (k == wi and pi == 0) else ""
                         lines.append("{" + fnt + pp + "}" + raw[k])
                     ink_tag = (rf"\1c{ass_color(ink)}\bord0\shad0" if oncard else "")

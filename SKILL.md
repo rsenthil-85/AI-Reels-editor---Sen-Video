@@ -12,7 +12,7 @@ description: >-
 
 # pro-video-editor
 
-Version 1.10.0 - see CHANGELOG.md. How it works, what was measured and why: `references/engineering-notes.md`
+Version 1.12.0 - see CHANGELOG.md. How it works, what was measured and why: `references/engineering-notes.md`
 (read it before changing the pipeline). Recording advice for users: `references/recording-guide.md`.
 
 Every video goes: **gallery + style question (instant, analysis runs behind it) -> short brief -> edit -> stills -> final**.
@@ -27,10 +27,16 @@ Everything happens on one page in the browser pane on the right (templates/live.
 the user picks the style there, watches the edit, and can finish in FilmCraft from the same page.
 
 1. Start, all in the background (Bash `run_in_background`), in this order:
-   - `PY S/live.py <video> --port 8765` (pick another port if busy), then open `http://127.0.0.1:8765/` in the browser
-     pane and SHOW the pane (tabs_context; show_pane "preview" - a hidden pane is invisible to the user)
+   - `PY S/live.py <video> --port 8765` (it takes the next free port if busy: read the port from its first line), then
+     open the page in a NEW browser tab for every new video (tabs_create foreground, then navigate that tab) - never reuse
+     an old video's tab - and SHOW the pane (show_pane "preview"; a hidden pane is invisible to the user). Close tabs of
+     finished edits when asked. No browser pane (other agents): add `--open` to open it in the normal browser.
    - `PY S/autoedit.py <video> --analyze`
-   - the hand-off wait: `until [ -f "<name>_edit/choice.json" ]; do sleep 1; done; cat "<name>_edit/choice.json"`
+   - the hand-off wait: `PY S/wait_choice.py --timeout 3600` (prints `{"video","edit_dir","choice"}` and marks the
+     choice taken). While it runs it tells the page an agent is listening; without it the page runs the automatic
+     edit itself (no hand-made graphics). No video yet? `PY S/live.py --home <folder>` shows the start screen: the
+     user drops a raw video in the browser, and "+ New video" (top right) or Recent edits switch videos; run
+     wait_choice.py again after each finished edit to catch the next one.
 2. Tell the user in one or two lines: "Pick your style on the right and press Start editing - it's analysing your
    video meanwhile." The page shows the gallery pictures (assets/gallery/style_*.jpg), "Describe your own", length
    (full / 60 / 30, only what fits), extras (music, zoom-ins, icon stickers, recap checklist) and how to finish:
@@ -38,7 +44,8 @@ the user picks the style there, watches the edit, and can finish in FilmCraft fr
    If the user answers in the chat instead, write the same choice.json yourself and carry on.
 3. When the wait finishes, read choice.json and map it: style -> answers.json `style` ("describe": nearest style +
    the user's words as overrides, see section 3); length full/60/30 -> format reel_full/reel_60/reel_30; extras
-   music/zooms -> extras; stickers/checklist -> you add `sticker` overlays / a `checklist` card; always include
+   music/zooms -> extras; `captions` (karaoke|pill|duo|stack|minimal|none, "style" = the style default) and
+   `caption_color` (#RRGGBB) go into answers.json as they are; stickers/checklist -> you add `sticker` overlays / a `checklist` card; always include
    "graphics". Look: the user's last profile, else Clean Paper. Then section 3 (edit) and section 4 (render).
 4. finish = "filmcraft": after compose.py finishes, run `PY S/filmcraft_open.py <video>` (background). The page shows
    FilmCraft's progress and a picture of its window next to our video; FilmCraft itself opens as a desktop window
@@ -162,6 +169,40 @@ was not verified. End with **ship it, or change it?**
   (references: bed ~3-6 dB under voice peaks, 7-76 SFX hits/min).
 - New reference from the user: `scripts/learn_style.py <url>` -> contact sheet, cuts, captions, audio stats;
   write the findings into references/style-refs.md, then build what is missing.
+
+## Cartoon scenes (`type: toon`) and the Bold + Animated style (animated)
+
+Animated cut-aways in Lemo-Opuscar's Mid-century cartoon style (engine bundled in `templates/toon/`, MIT), rendered by
+the normal graphics renderer (`templates/toon.html`, 24 fps, opaque): about 5 s of work per 4 s scene. Our own
+creator and robot; five scenes, picked by what the speaker is saying:
+
+| scene | use it when the speaker... | labels |
+|---|---|---|
+| `struggle` | describes the problem, the time or effort it used to take | `l1` tag on the clock ("2 hours") |
+| `relief` | introduces the fix ("so I built...", "AI does it") | `l1` optional tag |
+| `machine` | explains how something works (input -> process -> result) | `l1` input, `l2` output |
+| `beforeafter` | compares two states | `l1` before, `l2` after |
+| `checklist` | lists steps or features | `l1` heading, `items` "a|b|c" (max 5) |
+
+Insert: `{"t0","t1","mode":"full","gfx":{"type":"toon","scene":"struggle","l1":"2 hours"}}` (dur comes from t1-t0); in a
+top panel use `"mode":"top"`. The extra **Cartoon cut-aways** on the edit page adds 1-3 of them to any style.
+
+**Every video gets its own cast** (never the same cartoon twice): before rendering, look at `sheet.jpg` and run
+`PY S/toon_cast.py <name>_edit --hair side|short|curly|spiky|bald|bun|long --beard none|stubble|full|moustache [--glasses]`.
+It samples the speaker's skin tone and shirt colour from the video (face.json position), and picks the robot (colour,
+head shape, antenna), the room palette (5 sets), two pieces of wall decor and the prop colour from a seed made from the
+video's name, so the same video re-renders the same and every new video looks different. compose.py passes
+`toon_cast.json` to every toon graphic (and runs toon_cast.py itself if you forgot, without the hair/beard you saw).
+
+**Bold + Animated** = Bold B-roll with a cartoon scene for every point: hook = a toon scene in the top panel + the band
+overlay; face with stacked captions and zoom-ins; each listed point = a full toon scene + `bignum`; `ctaword` on the
+comment line; `endcard` outro. **Animation look:** Mid-century cartoon by default. If the user links a reference (or
+asks for anime, whiteboard, crayon, rubber hose, watercolour...), study it (learn_style.py) and pick the closest of
+Lemo's 66 styles (`~/lemo-opuscar/AGENTS.md` lists them). Only midcentury-toon is bundled as ready scenes; another style
+means directing those scenes as a short Lemo film (lemo-opuscar skill: treatment, the style's engine from
+`setup.sh demo <slug>` - on Windows extract it with `git archive`, the script mangles paths - our own characters, never
+the demo's), rendered with `node core/render/video.mjs <project> --size 1080x1920 --fps 24` (~2 s of render per 1 s of
+film), then inserted with `"src"`. Say which look you picked and why in one line.
 
 ## AI News style (news) - how to build it
 Needs screenshots (choice.json `materials`: uploaded on the page into `<name>_edit/materials/`, file paths, a folder, or
@@ -288,6 +329,9 @@ motion-graphics ideas - read prompts, write your own code.
 ## Limits
 
 - Whisper mishears names - always proof `words_cut.json`.
+- Other languages: transcribe.py detects the language. Tamil, Hindi, Telugu and the rest use large-v3-turbo
+  (MIT, ~1.6 GB, downloaded once with the user's OK, never bundled) and come out as the English meaning, not native
+  script (37 s Tamil clip: 90 s). The page says so. Without the big model it warns that captions may be wrong.
 - Auto face framing: `--analyze` starts scripts/face_frame.py in the background (MIT BiRefNet on 3 frames, ~40 s,
   during the questions); `--answers` puts face_x/face_y into plan.json. One position per video (not tracking):
   still glance at a still of the bottom panel. Without the model it falls back to 0.5 / 0.45.

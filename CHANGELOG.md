@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.12.0 - 2026-11-28
+- Start screen on the edit page (`live.py --home <folder>`): drop or pick a raw video from the browser (up to 8 GB,
+  progress with time left), a "+ New video" button top right on every screen, and Recent edits with a remove button
+  (moves the work files to the Recycle Bin, keeps the original and finished videos).
+- Caption step after the style pick: six layouts (word highlight, pill, two-colour, stacked, minimal, none) shown with
+  sample subtitles, plus seven colours. The edit follows the choice (`captions`, `caption_color` in choice.json).
+- `scripts/wait_choice.py`: the AI agent listens for the user's choice (heartbeat). When no agent is listening the page
+  runs the automatic edit itself, so it never sits on "waiting for your style".
+- Speech in other languages: the language is detected; Tamil, Hindi, Telugu, Kannada, Malayalam, Marathi, Gujarati and
+  more use large-v3-turbo (MIT, ~1.6 GB, downloaded once, not bundled), sentence by sentence because speakers mix
+  languages. Captions come out as the English meaning (37 s Tamil clip: 90 s). Not Tamil script yet.
+- Cartoon cut-aways get their own cast per video (`scripts/toon_cast.py`): skin and shirt colour read from the
+  speaker, hair/beard/glasses from the agent, robot, room colours and props seeded from the video name.
+- Fixes: the video stops playing when the page is hidden or closed; analysis no longer overwrites a choice made
+  while it ran; light pill captions use dark text; stacked captions move below the face in face layout.
+
+## 1.11.0 - 2026-11-28
+- **Bold + Animated** style (our own): Bold B-roll's hook band, warm face and stacked captions, with an animated cartoon
+  scene for every point (big lime number), glowing comment call-out and end card.
+- Cartoon scenes (`type: toon`): Lemo-Opuscar's Mid-century cartoon engine bundled (MIT, `templates/toon/`), our own
+  creator and robot, five reusable scenes - struggle, relief, machine (how it works), beforeafter, checklist - with
+  labels. 24 fps, opaque; 5 scenes x 4 s rendered in 25.5 s. "Cartoon cut-aways" extra on the edit page for any style.
+  Other Lemo looks (anime, whiteboard, crayon...) are directed as short Lemo films when a reference asks for them.
+- Fixes: canvas graphics were captured once and repeated (frame reuse saw an empty DOM box as "unchanged");
+  FilmCraft panel shows a drawn placeholder instead of a broken image; captions sit lower on cartoon scenes;
+  page servers bind exclusively (an old edit's page could keep answering on Windows); each video keeps one page code
+  across restarts and stale tabs reload themselves; "waiting for your choice" no longer spins.
+
 ## 1.10.1 - 2026-11-28
 - Edit page "Your material" field: share a video link or paste a file path, or upload from the computer (button or
   drag and drop, progress bar; saved to `<name>_edit/materials/`, videos and images up to 4 GB, page-token protected).
