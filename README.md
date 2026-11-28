@@ -1,21 +1,23 @@
 # pro-video-editor
 
-A Claude Code skill that edits talking-head videos into finished reels and YouTube videos. You record on your
-phone, give it the file, pick a style on one page, and watch the edit happen. It cuts the pauses, umms and
-retakes, cleans your voice, adds captions, graphics, stickers, music and sound effects, grades the colour and
-exports a ready-to-post video. If you want to change something by hand, it can open the whole edit in
-FilmCraft, a free video editor.
+Free and open source (MIT). Works with Claude Code, ChatGPT Codex, OpenCode, Gemini CLI and local models.
 
-Everything heavy runs on your own computer with free, open-source tools. No API keys, no ChatGPT, no paid
-services. Claude Code (your normal Claude plan) is the part that reads your transcript and decides the edit.
+A free, open-source video editor for talking-head reels and YouTube videos. It works with the AI assistant you
+already use: Claude Code, ChatGPT (Codex), OpenCode, Gemini CLI, or a model running on your own computer. With no
+AI at all, it still makes a clean automatic edit.
+
+You record on your phone, drop the file on the edit page, pick a style, and watch the edit happen. It cuts the
+pauses, umms and retakes, cleans your voice, adds captions, graphics, stickers, music and sound effects, grades
+the colour and exports a ready-to-post video. If you want to change something by hand, it can open the whole edit
+in FilmCraft, a free video editor.
+
+Everything heavy runs on your own computer with free, open-source tools: no API keys and no paid services. The AI
+assistant only does the judgement part: it reads your transcript and decides where the cards and stickers go
+and what they say. MIT licence, free for anyone to use, change and share.
 
 ![Five steps: drop your video, pick a style, pick captions, watch it edit, edit again](docs/img/flow.png)
 
-![Bold B-roll: hook band, talking with stacked words, a big number per point, glowing comment call-to-action, end card](assets/gallery/storyboard_studio.jpg)
-
-![Clean cards: title card, card above a rounded face window, full card, sticker, recap checklist](assets/gallery/storyboard_mixed.jpg)
-
-![Face and captions: title, big captions, zoom-in, sticker, number card](assets/gallery/storyboard_simple.jpg)
+![The six styles, each from start to finish: Bold B-roll, Clean cards, Face and captions, Bold + Animated, AI News, Screen tutorial](docs/img/styles_grid.jpg)
 
 ## Contents
 
@@ -26,7 +28,7 @@ services. Claude Code (your normal Claude plan) is the part that reads your tran
 - [Methods: what happens at each step](#methods-what-happens-at-each-step)
 - [Speed](#speed)
 - [Install](#install)
-- [Use](#use)
+- [Use it with your AI](#use-it-with-your-ai)
 - [Optional: touch up in FilmCraft](#optional-touch-up-in-filmcraft)
 - [Folder map](#folder-map)
 - [Privacy, licences and limits](#privacy-licences-and-limits)
@@ -55,10 +57,10 @@ services. Claude Code (your normal Claude plan) is the part that reads your tran
 
 ```mermaid
 flowchart LR
-    A[You give Claude a video] --> B[Edit page opens on the right]
+    A[You drop a video on the page<br/>or give it to your AI] --> B[Edit page opens]
     A --> C[Analysis in the background<br/>speech to words, cuts, background check]
     B --> D[You pick style, length,<br/>extras, how to finish]
-    C --> E[Claude plans the edit<br/>from your transcript]
+    C --> E[Your AI plans the graphics<br/>from your transcript<br/>or the automatic edit runs]
     D --> E
     E --> F[Graphics rendered<br/>in a headless browser]
     F --> G[Video assembled with ffmpeg<br/>4 parts in parallel]
@@ -68,14 +70,16 @@ flowchart LR
     I -->|no| K[Done]
 ```
 
-1. **You give Claude the video** (drag it in, or type `@` and the path), or drop it on the edit page's start
-   screen. Nothing else is needed.
-2. **The edit page opens** in Claude's browser pane, and the analysis starts at the same time, so you never wait
-   for the first question.
+1. **You drop the video** on the edit page's start screen, or give it to your AI assistant. Nothing else is
+   needed.
+2. **The edit page opens** in your browser (or the assistant's browser pane), and the analysis starts at the same
+   time, so you never wait for the first question.
 3. **You choose** on the page: a style from the pictures (or describe your own), the length, extras, and whether
    you want to touch it up in FilmCraft afterwards. Press **Start editing**.
-4. **Claude plans the edit** from your transcript: which card goes where, what it says (in your own words, run
-   through the humanizer so it never sounds AI-written), which stickers pop up when you name something.
+4. **Your AI assistant plans the edit** from your transcript: which card goes where, what it says (in your own
+   words, run through the humanizer so it never sounds AI-written), which stickers pop up when you name something.
+   No assistant listening? The page makes the automatic edit itself: cuts, voice, captions, colour, zoom-ins and
+   music, without hand-made cards.
 5. **The page shows the work live**: graphics appear as they are made, the render percentage climbs, then the
    finished video plays there.
 6. **Optional**: FilmCraft opens with everything on a real timeline for hand changes.
@@ -86,7 +90,7 @@ flowchart LR
 ## The edit page
 
 One page for the whole job. It runs on your own computer only (`127.0.0.1`) and opens on the right side of the
-Claude app, or in any browser. Faces in these screenshots are blurred and the transcript is hidden.
+Claude app or any browser. Faces in these screenshots are blurred and the transcript is hidden.
 
 **Start.** Drop a raw video from your phone or camera (MP4 or MOV, up to 8 GB). It stays on your computer. Your
 earlier edits are listed below it; click one to open it again. The **+ New video** button at the top right brings
@@ -145,9 +149,9 @@ to the Recycle Bin. Your original video and the finished video are never deleted
 | **Bold + Animated** | Bold B-roll with an animated cartoon scene for every point | Stories and lists that need more movement |
 | **AI News** | You over the headline: screenshots zoom in, key lines highlighted | Reacting to news and launches |
 | **Screen tutorial** | Your screen recording zooms to each click, your face in a bubble | Showing how to use a tool |
-| **Describe your own** | Claude picks the nearest style and applies what you wrote (or studies a reel you link) | Anything else |
+| **Describe your own** | Your AI picks the nearest style and applies what you wrote (or studies a reel you link) | Anything else |
 
-The storyboards at the top of this page show each style from start to finish, and the edit page uses the same
+The style pictures at the top of this page show each style from start to finish, and the edit page uses the same
 pictures in its style picker. The presenter in them is AI-generated, not a real person.
 
 Colour looks for Clean cards and Face and captions:
@@ -238,6 +242,12 @@ winget install Gyan.FFmpeg
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
+This installs it as a Claude Code skill. For other assistants, install it where you cloned it:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1 -Target .
+```
+
 The first install takes 5 to 10 minutes: it creates a Python environment, installs the headless browser and
 downloads the Whisper speech model (about 480 MB), the person model (224 MB) and the big speech model for Indian
 and other languages (large-v3-turbo, MIT, 1.6 GB).
@@ -253,27 +263,43 @@ and other languages (large-v3-turbo, MIT, 1.6 GB).
 If Windows Smart App Control briefly blocks a new library, the installer waits and tries again. It never turns
 any protection off.
 
-## Use
+## Use it with your AI
 
-In Claude Code, from any folder:
+The editing scripts are plain Python and Node, so any AI coding assistant can drive them. Each one reads the
+guide file it knows; they all point to the same workflow.
+
+| Assistant | How to start | Guide it reads |
+|---|---|---|
+| **Claude Code** | `install.ps1` installs it as a skill. Then drop a video in the chat | `SKILL.md`, `CLAUDE.md` |
+| **ChatGPT (Codex CLI)** | Run `codex` in this folder | `AGENTS.md` |
+| **OpenCode** | Run `opencode` in this folder; pick any model, including local ones | `AGENTS.md` |
+| **Gemini CLI** | Run `gemini` in this folder | `GEMINI.md` |
+| **Local model** (Ollama, LM Studio) | Use it through OpenCode or any assistant that can run commands | `AGENTS.md` |
+| **No AI** | Open the edit page and press Start editing: the automatic edit runs | nothing |
+
+Tested so far with Claude Code. The others follow the same written steps (`AGENTS.md`, "Run it with any
+assistant"), but have not been tested end to end yet. Smaller local models may write weaker on-screen text; the cuts,
+voice, captions and render are scripts and come out the same with any assistant.
+
+Things you can say to any of them:
 
 - "Open the edit page": the start screen opens and you drop your video there.
-- `@"D:\clips\my-reel.mp4"` and nothing else: the edit page opens and you choose there.
+- "Edit D:\clips\my-reel.mp4": the edit page opens and you choose there.
 - "Edit this into a 30 s reel with yellow captions and no music": the description is used as your style.
 - "Swap the green background": works when the background can be keyed.
-- "Change the music to cinematic", "make the captions bigger": Claude edits the plan and re-renders.
+- "Change the music to cinematic", "make the captions bigger": the assistant edits the plan and re-renders.
 
-Command line without Claude (cuts, voice, captions, colour, zoom-ins and music, but no cards or stickers,
-because those need judgement):
-
-```powershell
-.venv\Scripts\python.exe scripts\autoedit.py "my video.mp4"
-```
-
-The edit page on its own, without Claude (choices made on the page run the automatic edit):
+The edit page on its own, no AI needed (choices made on the page run the automatic edit):
 
 ```powershell
 .venv\Scripts\python.exe scripts\live.py --home "D:\clips" --open
+```
+
+One command, no questions (cuts, voice, captions, colour, zoom-ins and music, but no cards or stickers, because
+those need judgement):
+
+```powershell
+.venv\Scripts\python.exe scripts\autoedit.py "my video.mp4"
 ```
 
 ## Optional: touch up in FilmCraft
@@ -296,7 +322,8 @@ skill stays the final file. FilmCraft is best for trying changes (for example a 
 ## Folder map
 
 ```
-SKILL.md                  instructions Claude follows (the workflow above)
+AGENTS.md                 guide for any AI assistant (Codex, OpenCode, local models); GEMINI.md and CLAUDE.md point to it
+SKILL.md                  the step-by-step workflow (written for Claude Code, readable by any assistant)
 install.ps1               installer
 scripts/                  autoedit, transcribe, cut, analyze, compose, captions, render_gfx, live, filmcraft_open,
                           music, sfx_design, make_gallery, learn_style (study a reference reel), and more
@@ -311,12 +338,12 @@ docs/img/                 the screenshots in this README
 
 ## Privacy, licences and limits
 
-- **Your videos stay on your computer.** Only the transcript text and the still frames Claude checks go to Claude,
-  as with anything in Claude Code. The live page and FilmCraft listen on 127.0.0.1 only. This repository never
+- **Your videos stay on your computer.** Only the transcript text and the still frames your assistant checks are
+  sent to it, and with a local model nothing leaves your computer. The live page and FilmCraft listen on 127.0.0.1 only. This repository never
   contains videos, audio or edit folders (see `.gitignore`).
 - **Licences:** everything bundled is MIT, ISC or OFL; anything else is opt-in. See [LICENSES.md](LICENSES.md).
 - **Limits:**
-  - Whisper can mishear names, so Claude checks the transcript.
+  - Whisper can mishear names, so the assistant checks the transcript.
   - Speech in Tamil and other Indian languages becomes English-meaning captions, not captions in your own
     script, and the word highlight does not match each spoken word exactly.
   - Background voices talking over you cannot be separated.

@@ -58,7 +58,11 @@ Styles: `styles/edit_styles.json` (Clean cards = `mixed`, Bold B-roll = `studio`
 AI News = `news`, Screen tutorial = `tutorial`, Bold + Animated = `animated`),
 `styles/themes.json` (colour looks), `styles/presets.json` (per content type).
 
-## Run it without Claude
+## Run it with any assistant (or none)
+
+This is a free, open-source editor (MIT). It must keep working with Claude Code, ChatGPT Codex, OpenCode, Gemini
+CLI and local models (Ollama, LM Studio through OpenCode), and with no AI at all. Don't add a step that only one
+assistant can do; if a Claude tool makes something nicer, keep a plain fallback (list below).
 
 Any agent can drive the same flow with a shell:
 
@@ -79,7 +83,7 @@ $PY = ".venv\Scripts\python.exe"                       # made by install.ps1
 One shot with no questions and no hand-made graphics: `& $PY scripts\autoedit.py video.mp4`.
 Render one graphic still: `node scripts/render_gfx.mjs x '{"type":"checklist",...}' --w 1080 --h 1920 --dur 3 --still 2 out.png`.
 
-**What the agent (LLM) is for:** reading `transcript.srt` / `words_cut.json`, catching misheard names (`"fix"` in
+**What the agent (LLM) is for** (any model can do it; bigger models write better card text): reading `transcript.srt` / `words_cut.json`, catching misheard names (`"fix"` in
 plan.json), choosing where cards and stickers go, writing on-screen text in the speaker's own words, and looking
 at stills before handing over. Everything else is scripts. A local model can do this part; give it this file,
 `SKILL.md`, the transcript and `plan.json`.
