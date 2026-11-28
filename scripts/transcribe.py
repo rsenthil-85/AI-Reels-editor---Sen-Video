@@ -16,6 +16,8 @@ VERBATIM = ("Umm, so, so I, I was, uh, I was like... like, you know, I I mean, t
             "uh, before, before it edits. Claude, ChatGPT, AI, side hustle, $1,000.")
 
 BIG = "large-v3-turbo"   # for every language that is not English
+# bundled copy (install.ps1 puts it here; MIT, ~1.6 GB, kept out of git) - else the Hugging Face cache
+BIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "models", "whisper-large-v3-turbo")
 LANGS = {"en": "English", "ta": "Tamil", "hi": "Hindi", "te": "Telugu", "kn": "Kannada", "ml": "Malayalam", "mr": "Marathi",
          "gu": "Gujarati", "bn": "Bengali", "pa": "Punjabi", "ur": "Urdu"}
 
@@ -50,8 +52,8 @@ def main():
     if lang != "en" and not picked:
         # the small model writes broken text for Tamil, Hindi, Telugu... (measured: a 30 s Tamil clip came out as one
         # word repeated); large-v3-turbo (MIT, ~1.6 GB, downloaded once with the user's OK) handles them
-        try: m = load(BIG, local_files_only=True); note(f"{LANGS.get(lang, lang)} speech: using the bigger speech model")
-        except Exception: note(f"{LANGS.get(lang, lang)} speech: the bigger speech model is not downloaded, captions may be wrong (ask to download {BIG})")
+        try: m = load(BIG_DIR if os.path.exists(os.path.join(BIG_DIR, "model.bin")) else BIG, local_files_only=True); note(f"{LANGS.get(lang, lang)} speech: using the bigger speech model")
+        except Exception: note(f"{LANGS.get(lang, lang)} speech: the bigger speech model is not downloaded, captions may be wrong (run install.ps1 again, or ask to download {BIG})")
     prompt = VERBATIM if lang == "en" else None   # an English prompt pushes other languages into English
     json.dump({"lang": lang}, open(os.path.join(out, "lang.json"), "w"))
     mixed = lang != "en" and "--lang-strict" not in a

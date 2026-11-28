@@ -28,7 +28,7 @@ make_sfx.py's sound effects): MIT.
 |---|---|---|
 | three | MIT | yes |
 | faster-whisper, CTranslate2, Whisper "small" weights | MIT | yes |
-| Whisper large-v3-turbo weights (mobiuslabsgmbh/faster-whisper-large-v3-turbo) - non-English speech, downloaded once on request | MIT | no |
+| Whisper large-v3-turbo weights (mobiuslabsgmbh/faster-whisper-large-v3-turbo) - Tamil, Hindi and other languages; bundled in assets/models/whisper-large-v3-turbo by install.ps1 (skip with -NoBigSpeech), kept out of git (1.6 GB) | MIT | default |
 | librosa | ISC | yes (beat sync) |
 | fonttools | MIT | yes |
 | numpy, soundfile | BSD-3 | yes |

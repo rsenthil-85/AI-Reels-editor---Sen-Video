@@ -1,13 +1,14 @@
 <#
   pro-video-editor installer (Windows, PowerShell 5.1+)
 
-    powershell -ExecutionPolicy Bypass -File install.ps1 [-Target <skills dir>] [-WithRNNoise] [-AllowNonMIT] [-NoModels] [-WithFilmCraft]
+    powershell -ExecutionPolicy Bypass -File install.ps1 [-Target <skills dir>] [-WithRNNoise] [-AllowNonMIT] [-NoModels] [-NoBigSpeech] [-WithFilmCraft]
 
   - Copies this folder to %USERPROFILE%\.claude\skills\pro-video-editor (or -Target).
   - Python env (.venv) from the python.org Python 3.10-3.12 already installed (signed, so Windows Smart App
     Control allows it - no downloaded interpreters).
   - npm deps (playwright-core, three) + Playwright's headless Chromium for rendering graphics.
   - Pre-downloads the Whisper "small" model unless -NoModels.
+  - Bundles the big speech model (large-v3-turbo, MIT, ~1.6 GB) for Tamil, Hindi and other languages unless -NoModels or -NoBigSpeech.
   - -WithRNNoise: fetches RNNoise voice-denoise models (GregorR/rnnoise-models; no explicit licence file - opt-in).
   - -AllowNonMIT: also installs optional libs that are NOT MIT/ISC (postprocessing: Zlib, @dimforge/rapier3d-compat:
     Apache-2.0, p5: LGPL-2.1) for the React Three / Claude Animation Base workflows. Off by default.
@@ -22,6 +23,7 @@ param(
   [switch]$WithMatte,
   [switch]$AllowNonMIT,
   [switch]$NoModels,
+  [switch]$NoBigSpeech,
   [switch]$WithFilmCraft,
   [string]$FilmCraftVersion = "0.20.1"
 )
@@ -106,6 +108,18 @@ if (-not $NoModels) {
   Step "Whisper speech model (small, ~480 MB, first time only)"
   & $venvPy -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8'); print('  whisper ready')"
   if ($LASTEXITCODE -ne 0) { throw "whisper model step failed" }
+}
+
+if (-not $NoModels -and -not $NoBigSpeech) {
+  $bd = Join-Path $Target "assets\models\whisper-large-v3-turbo"
+  if (-not (Test-Path (Join-Path $bd "model.bin"))) {
+    Step "Big speech model for Tamil, Hindi, Telugu and more (large-v3-turbo, MIT, ~1.6 GB, first time only)"
+    New-Item -ItemType Directory -Force $bd | Out-Null
+    $base = "https://huggingface.co/mobiuslabsgmbh/faster-whisper-large-v3-turbo/resolve/main"
+    foreach ($f in "config.json","preprocessor_config.json","tokenizer.json","vocabulary.json","README.md","model.bin") {
+      Invoke-WebRequest "$base/$f" -OutFile (Join-Path $bd $f)
+    }
+  }
 }
 
 if ($WithFilmCraft) {

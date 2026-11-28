@@ -330,7 +330,7 @@ motion-graphics ideas - read prompts, write your own code.
 
 - Whisper mishears names - always proof `words_cut.json`.
 - Other languages: transcribe.py detects the language. Tamil, Hindi, Telugu and the rest use large-v3-turbo
-  (MIT, ~1.6 GB, downloaded once with the user's OK, never bundled) and come out as the English meaning, not native
+  (MIT, 1.6 GB, bundled in assets/models/ by install.ps1) and come out as the English meaning, not native
   script (37 s Tamil clip: 90 s). The page says so. Without the big model it warns that captions may be wrong.
 - Auto face framing: `--analyze` starts scripts/face_frame.py in the background (MIT BiRefNet on 3 frames, ~40 s,
   during the questions); `--answers` puts face_x/face_y into plan.json. One position per video (not tracking):

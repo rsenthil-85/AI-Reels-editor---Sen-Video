@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.1 - 2026-11-28
+- The big speech model is bundled with the skill: `assets/models/whisper-large-v3-turbo` (MIT, 1.6 GB). install.ps1
+  downloads it once (skip with `-NoBigSpeech`); transcribe.py uses that copy first. It stays out of git (GitHub's
+  100 MB file limit). Tested with the download cache hidden: 37 s Tamil clip in 83 s.
+
 ## 1.12.0 - 2026-11-28
 - Start screen on the edit page (`live.py --home <folder>`): drop or pick a raw video from the browser (up to 8 GB,
   progress with time left), a "+ New video" button top right on every screen, and Recent edits with a remove button
