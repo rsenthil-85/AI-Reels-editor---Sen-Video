@@ -13,14 +13,14 @@ answers.json:
    "extras": ["bg_replace","motion_bg","transitions","graphics","zooms","music","effects","broll"],
    "music_mood": "lofi|chill|upbeat|corporate|tech|cinematic", "save_profile": true}
 Always on, never asked: dead-air/filler cuts, clean voice + background-voice gate, colour grade, -14 LUFS, humanizer.
-The last answers are saved to %USERPROFILE%/.pro-video-editor/profile.json ("same as last time?").
+The last answers are saved to <install>/.state/profile.json ("same as last time?").
 """
 import json, os, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 PY = sys.executable
-PROFILE = os.path.join(os.path.expanduser("~"), ".pro-video-editor", "profile.json")
+PROFILE = os.path.join(os.environ.get("PVE_STATE") or os.path.join(ROOT, ".state"), "profile.json")   # per install
 CAPS = {"karaoke": "bold", "pill": "pill", "minimal": "minimal", "duo": "duo", "stack": "stack"}
 STYLES = json.load(open(os.path.join(ROOT, "styles", "edit_styles.json"), encoding="utf-8"))
 

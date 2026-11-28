@@ -5,6 +5,22 @@ Gemini CLI), Cursor, Copilot, Windsurf, Aider, or a local model. It says what we
 how to run and test them, and the rules. `SKILL.md` is the step-by-step workflow Claude Code follows when it edits
 a video; this file is the map for anyone changing or extending the code.
 
+## Quick start (any assistant: do this when the user wants to edit a video or "open the editor")
+
+1. First time in a fresh clone there is no `.venv`: run `powershell -ExecutionPolicy Bypass -File install.ps1 -Target .`
+   (5 to 10 minutes, downloads models; tell the user it is happening).
+2. Start the edit page as a long-running background process, never as a command you wait on:
+   `.venv\Scripts\python.exe -u scripts\live.py --home <folder for videos> --open`
+   (`--open` opens the user's normal browser; with a video path instead of `--home` it opens that video).
+3. ALWAYS tell the user the link from its first lines (`http://127.0.0.1:8765`, or the next free port it printed).
+   Some assistants run commands in a sandbox that cannot open windows, or stop background processes when the
+   turn ends. If the browser did not open, or the page stops answering, ask the user to double-click
+   `start.bat` in this folder (or run `powershell -ExecutionPolicy Bypass -File start.ps1`), which does steps 1
+   and 2 in its own window and opens the browser.
+4. The user drops the video on the page and picks style, captions, length and extras. To add hand-made graphics,
+   run `scripts\wait_choice.py` and follow "Run it with any assistant" below; if no assistant is listening, the page
+   makes the automatic edit by itself.
+
 ## What this is
 
 **pro-video-editor**: an AI video editor for talking-head reels and YouTube videos in the AI / side-hustle niche.

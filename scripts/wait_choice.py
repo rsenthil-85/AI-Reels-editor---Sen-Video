@@ -2,7 +2,7 @@
 
     python wait_choice.py [--timeout SECONDS]
 
-Follows the page's current video (~/.pro-video-editor/current.json, written by live.py), so it also catches a video
+Follows the page's current video (<install>/.state/current.json, written by live.py), so it also catches a video
 the user uploaded with the page's "New video" button. Prints one JSON line and exits:
     {"video": "...", "edit_dir": "...", "choice": {...}}
 and marks the choice as taken (<edit>/choice.taken) so the next wait does not return the same one. Run it again
@@ -10,7 +10,7 @@ after each edit to catch the next video. Exit code 2 on timeout. Standard librar
 """
 import json, os, sys, time
 
-STATE = os.path.join(os.path.expanduser("~"), ".pro-video-editor", "current.json")
+STATE = os.path.join(os.environ.get("PVE_STATE") or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".state"), "current.json")   # same folder live.py uses
 ALIVE = os.path.join(os.path.dirname(STATE), "agent.alive")   # live.py: an agent is listening (else it runs the automatic edit)
 
 def main():

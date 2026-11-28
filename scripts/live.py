@@ -9,8 +9,8 @@ video's folder, else ~/Videos/Pro video editor). --auto: no agent is watching, s
 itself when the user presses Start editing (autoedit.py --answers; no hand-made graphics).
 
 The page has a "New video" button: the user uploads a raw video, live.py saves it, starts autoedit.py --analyze and
-switches the page to it. Agents follow the current video through ~/.pro-video-editor/current.json and wait for the
-user's choice with scripts/wait_choice.py. Recent edits (~/.pro-video-editor/recent.json) can be reopened on the page.
+switches the page to it. Agents follow the current video through <install>/.state/current.json and wait for the
+user's choice with scripts/wait_choice.py. Recent edits (<install>/.state/recent.json, one list per install) can be reopened on the page.
 
 Local only (binds 127.0.0.1), read-only, standard library only. Serves templates/live.html plus, from the edit
 folder: live.json (progress from livelog.py), plan.json, words / segments, cut.mp4, the finished video, graphics
@@ -29,7 +29,7 @@ CACHE = os.path.join(os.path.expanduser("~"), ".pro-video-editor", "cache")
 PAGE_TOKEN = secrets.token_hex(16)   # the page sends it back on POST; other sites cannot read it
 FC_PROC = None
 ED = None; SRC = None; WORK = None; PORT = 8765; AUTO = False; AN_PROC = None
-STATE_DIR = os.path.join(os.path.expanduser("~"), ".pro-video-editor")
+STATE_DIR = os.environ.get("PVE_STATE") or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".state")   # per install: a fresh clone starts with no recent edits (set PVE_STATE to share one)
 RECENT = os.path.join(STATE_DIR, "recent.json"); THUMBS = os.path.join(STATE_DIR, "thumbs")
 VIDEO_EXT = (".mp4", ".mov", ".m4v", ".mkv", ".webm", ".avi")
 LOCK = threading.Lock()
@@ -47,7 +47,7 @@ def recent_list():
     return [x for x in r if isinstance(x, dict) and os.path.isdir(x.get("edit_dir") or "")]
 
 def set_current(src, ed):
-    """Switch the page to another video; agents read ~/.pro-video-editor/current.json to follow it."""
+    """Switch the page to another video; agents read <install>/.state/current.json to follow it."""
     global SRC, ED
     with LOCK:
         SRC, ED = src, ed; os.makedirs(ED, exist_ok=True); os.makedirs(STATE_DIR, exist_ok=True)
@@ -107,6 +107,18 @@ def keep_previous(ed):
     for f in ("choice.taken",):
         try: os.remove(os.path.join(ed, f))
         except OSError: pass
+
+def open_browser(url):
+    """Open the page in the normal browser. Windows: the shell's own handler first (works where webbrowser finds
+    no browser, e.g. under some agent sandboxes), then webbrowser, then a plain message."""
+    try:
+        if os.name == "nt": os.startfile(url); return
+    except Exception: pass
+    try:
+        import webbrowser
+        if webbrowser.open(url): return
+    except Exception: pass
+    print(f"  could not open a browser here - open {url} yourself", flush=True)
 
 def go_home():
     global SRC, ED
@@ -422,8 +434,10 @@ def main():
     PORT = port
     if vid: set_current(os.path.abspath(vid) if os.path.isfile(vid) else None, ed0)
     print(f"  live edit page: http://127.0.0.1:{port}   " + (f"(edit folder {ED})" if ED else f"(start screen; uploads saved in {WORK})"), flush=True)
+    url = f"http://127.0.0.1:{port}/"
+    print(f"  open this link in your browser if it does not open by itself: {url}", flush=True)
     if "--open" in a:   # also open it in the computer's normal browser (other agents, or no browser pane)
-        import webbrowser; threading.Timer(0.8, lambda: webbrowser.open(f"http://127.0.0.1:{port}/")).start()
+        threading.Timer(0.8, open_browser, args=(url,)).start()
     srv.serve_forever()
 
 if __name__ == "__main__":

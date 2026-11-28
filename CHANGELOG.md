@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.12.3 - 2026-11-28
+- `start.bat` / `start.ps1`: double-click to open the edit page from any setup; installs into the folder on first run.
+- `live.py --open` opens the browser through Windows itself and always prints the link (Codex could not open it).
+- Each install keeps its own state in `.state/` (recent edits, current video, last choices), so a fresh clone
+  starts empty instead of showing another install's videos. `PVE_STATE` shares one folder if wanted.
+- AGENTS.md quick start for any assistant.
+
 ## 1.12.2 - 2026-11-28
 - Edit page keeps every option open (style, captions, colour, length, extras, finish), also after Start editing, and
   shows the choices the current edit used. After an edit finishes, "Edit again with these choices" re-edits the same

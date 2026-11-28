@@ -28,6 +28,7 @@ and what they say. MIT licence, free for anyone to use, change and share.
 - [Methods: what happens at each step](#methods-what-happens-at-each-step)
 - [Speed](#speed)
 - [Install](#install)
+- [Open the editor](#open-the-editor)
 - [Use it with your AI](#use-it-with-your-ai)
 - [Optional: touch up in FilmCraft](#optional-touch-up-in-filmcraft)
 - [Folder map](#folder-map)
@@ -263,6 +264,15 @@ and other languages (large-v3-turbo, MIT, 1.6 GB).
 If Windows Smart App Control briefly blocks a new library, the installer waits and tries again. It never turns
 any protection off.
 
+## Open the editor
+
+Double-click **`start.bat`** in this folder. The first time it installs everything (5 to 10 minutes), then it opens
+the edit page in your browser at `http://127.0.0.1:8765`. Keep its window open while you edit. Your videos and
+finished edits go to `Videos\pro-video-editor` in your user folder.
+
+If you started it from an AI assistant and no browser opened, open that link yourself, or double-click
+`start.bat`. Some assistants run commands in a sandbox that cannot open windows.
+
 ## Use it with your AI
 
 The editing scripts are plain Python and Node, so any AI coding assistant can drive them. Each one reads the
@@ -275,7 +285,7 @@ guide file it knows; they all point to the same workflow.
 | **OpenCode** | Run `opencode` in this folder; pick any model, including local ones | `AGENTS.md` |
 | **Gemini CLI** | Run `gemini` in this folder | `GEMINI.md` |
 | **Local model** (Ollama, LM Studio) | Use it through OpenCode or any assistant that can run commands | `AGENTS.md` |
-| **No AI** | Open the edit page and press Start editing: the automatic edit runs | nothing |
+| **No AI** | Double-click `start.bat`, drop a video, press Start editing: the automatic edit runs | nothing |
 
 Tested so far with Claude Code. The others follow the same written steps (`AGENTS.md`, "Run it with any
 assistant"), but have not been tested end to end yet. Smaller local models may write weaker on-screen text; the cuts,
@@ -324,6 +334,7 @@ skill stays the final file. FilmCraft is best for trying changes (for example a 
 ```
 AGENTS.md                 guide for any AI assistant (Codex, OpenCode, local models); GEMINI.md and CLAUDE.md point to it
 SKILL.md                  the step-by-step workflow (written for Claude Code, readable by any assistant)
+start.bat / start.ps1     open the edit page (installs on first run)
 install.ps1               installer
 scripts/                  autoedit, transcribe, cut, analyze, compose, captions, render_gfx, live, filmcraft_open,
                           music, sfx_design, make_gallery, learn_style (study a reference reel), and more

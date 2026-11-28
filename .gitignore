@@ -38,3 +38,6 @@ snapshots/
 
 # optional apps downloaded by install.ps1 (FilmCraft)
 tools/
+
+# per-install state: recent edits, current video, last choices (never shared)
+.state/
