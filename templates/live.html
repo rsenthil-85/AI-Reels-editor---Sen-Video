@@ -123,7 +123,7 @@ video{width:100%;max-height:62vh;border-radius:10px;background:#111;display:bloc
  <h3>3. How long?</h3><div class="pills" id="lens"></div>
  <h3>4. Extras</h3><div class="pills" id="extras"></div>
  <h3>5. How do you want to finish?</h3><div class="pills" id="finish"></div><div class="sub" id="fcnote"></div>
- <button class="go" id="go" type="button">Start editing</button><span class="err" id="err"></span>
+ <button class="go" id="go" type="button">Start editing</button><span class="err" id="err"></span><div class="sub" id="againnote" style="margin-top:6px"></div>
 </div>
 <div class="card" id="chosen" hidden style="margin-bottom:14px"></div>
 <div class="grid">
@@ -168,16 +168,22 @@ function capsUI(){
 
 const EXTRAS=[['music','Music'],['zooms','Zoom-ins'],['stickers','Icon stickers'],['checklist','Recap checklist'],['toon','Cartoon cut-aways']];
 function chooseUI(){
- const show=!S.choice&&!(S.plan&&S.plan._style); $('choose').hidden=!show;
- if(S.choice){const c=S.choice,l=c.style==='describe'?'Your own: '+c.describe:(S.styles?.[c.style]?.label||c.style);
+ const show=!!S.styles; $('choose').hidden=!show; $('chosen').hidden=true;   // every option stays open, also after Start editing
+ const fin=S.steps?.done?.state==='done', busy=!!S.choice&&!fin&&!S.home;
+ if($('go')&&built){$('go').disabled=busy||$('go').dataset.sending==='1'; $('go').textContent=busy?'Editing with these choices...':S.choice?'Edit again with these choices':'Start editing';
+  $('againnote').textContent=busy?'You can change anything here once this edit is finished.':S.choice?'Change the style, captions, length or extras above, then edit again. Your finished video is kept under a new name.':''}
+ if(false){const c=S.choice,l=c.style==='describe'?'Your own: '+c.describe:(S.styles?.[c.style]?.label||c.style);
   $('chosen').hidden=false;$('chosen').innerHTML=`<b>Your choice:</b> ${esc(l)} &middot; ${c.captions&&c.captions!=='style'?esc((CAPS.find(x=>x[0]===c.captions)||[0,c.captions])[1])+' captions':'style captions'}${c.caption_color&&c.captions!=='none'?` <i style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${c.caption_color};border:1px solid #0003;vertical-align:-1px"></i>`:''} &middot; ${c.length==='full'?'full length':c.length+' s'} &middot; ${esc(c.extras.join(', ')||'no extras')} &middot; ${c.finish==='filmcraft'?'then touch up in FilmCraft':'done for you'}`}
  const ik=S.intake?1:0; if(!show||!S.styles||built===ik+1)return; built=ik+1;
- const rec=S.intake?.recommended||{}; pick.style=pick.style||rec.style||'mixed';   // keep what the user already clicked
+ const rec=S.intake?.recommended||{};
+ if(S.choice&&!pick.style){const c=S.choice; pick.style=c.style; pick.describe=c.describe||''; pick.length=c.length||'full'; pick.extras=(c.extras||[]).slice(); pick.finish=c.finish||'auto';
+  if(c.captions&&c.captions!=='style'){pick.captions=c.captions;pick.capT=true} if(c.caption_color){pick.cc=c.caption_color;pick.ccT=true}}   // show what this edit used
+ pick.style=pick.style||rec.style||'mixed';   // keep what the user already clicked
  if(!pick.capT)pick.captions=capDef(pick.style); if(!pick.ccT)pick.cc=colDef(pick.style);
  if(!pick.extras)pick.extras=['music'].concat((rec.extras||[]).includes('zooms')?['zooms']:[]).concat(['stickers']);
  const ord=['studio','mixed','simple','animated','news','tutorial'].filter(k=>S.styles[k]);
  $('tiles').innerHTML=ord.map(k=>`<button type="button" class="tile" data-k="${k}"><img src="/assets/gallery/storyboard_${k}.jpg" onerror="if(this.dataset.f){this.style.display='none'}else{this.dataset.f=1;this.src='/assets/gallery/style_${k}.jpg'}" alt=""><b>${esc(S.styles[k].label)}${k===rec.style?' (recommended)':''}</b><span>${esc(S.styles[k].tagline)}</span></button>`).join('')
-  +`<div class="tile" data-k="describe"><b>Describe your own</b><span>Tell me the look you want, or paste a link to a reel you like</span><textarea id="desc" placeholder="e.g. yellow pill captions, no music, fast cuts"></textarea></div>`;
+  +`<div class="tile" data-k="describe"><b>Describe your own</b><span>Tell me the look you want, or paste a link to a reel you like</span><textarea id="desc" placeholder="e.g. yellow pill captions, no music, fast cuts">${esc(pick.describe||'')}</textarea></div>`;
  document.querySelectorAll('.tile').forEach(t=>t.onclick=e=>{pick.style=t.dataset.k;if(pick.style!=='describe'){if(!pick.capT)pick.captions=capDef(pick.style);if(!pick.ccT)pick.cc=colDef(pick.style)}paint()});
  $('caps').onclick=e=>{const b=e.target.closest('.cap');if(b){pick.captions=b.dataset.k;pick.capT=true;paint()}};
  $('sws').onclick=e=>{const b=e.target.closest('.sw');if(b&&!b.disabled){pick.cc=b.dataset.c;pick.ccT=true;paint()}};
@@ -197,10 +203,11 @@ function chooseUI(){
   if(UPPING){$('err').textContent='Wait for the upload to finish';return}
   if(pick.style==='news'&&!pick.materials){$('err').textContent='Add your screenshots first';return}
   if(pick.style==='describe'&&!pick.describe.trim()){$('err').textContent='Write what you want first, or pick a style';return}
-  $('err').textContent='';$('go').disabled=true;
+  if(S.choice&&!confirm('Edit this video again with these choices? The finished video you have now is kept.'))return;
+  $('err').textContent='';$('go').disabled=true;$('go').dataset.sending='1';
   try{const rs=await fetch('/api/choose',{method:'POST',headers:{'Content-Type':'application/json','X-Page-Token':TOKEN},body:JSON.stringify(Object.assign({},pick,{caption_color:pick.cc}))});
    if(rs.status===403){stale();return}
-   const r=await rs.json(); if(!r.ok)throw 0}catch(e){$('err').textContent='Could not send - check the editor is still running, then try again';$('go').disabled=false}};
+   const r=await rs.json(); $('go').dataset.sending=''; if(!r.ok){$('err').textContent=r.error||'Could not start';$('go').disabled=false;return} window.scrollTo({top:$('steps').getBoundingClientRect().top+scrollY-90,behavior:'smooth'})}catch(e){$('go').dataset.sending='';$('err').textContent='Could not send - check the editor is still running, then try again';$('go').disabled=false}};
  paint();
 }
 let UP=[], UPPING=false;

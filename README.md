@@ -9,6 +9,8 @@ FilmCraft, a free video editor.
 Everything heavy runs on your own computer with free, open-source tools. No API keys, no ChatGPT, no paid
 services. Claude Code (your normal Claude plan) is the part that reads your transcript and decides the edit.
 
+![Five steps: drop your video, pick a style, pick captions, watch it edit, edit again](docs/img/flow.png)
+
 ![Bold B-roll: hook band, talking with stacked words, a big number per point, glowing comment call-to-action, end card](assets/gallery/storyboard_studio.jpg)
 
 ![Clean cards: title card, card above a rounded face window, full card, sticker, recap checklist](assets/gallery/storyboard_mixed.jpg)
@@ -33,14 +35,21 @@ services. Claude Code (your normal Claude plan) is the part that reads your tran
 
 - Dead air, filler sounds ("umm", "ahh") and retakes cut out automatically, from word timings.
 - Clean voice: noise reduction, background-voice gate, EQ, de-esser, compressor, -14 LUFS loudness.
-- Three editing styles learned from successful creators in the AI and side-hustle niche, plus "describe your own".
-- Captions in five styles (word highlight, serif key words, stacked words, pill, minimal).
+- Six editing styles learned from successful creators in the AI and side-hustle niche, plus "describe your own".
+- Captions in six layouts (word highlight, pill, big serif line, stacked words, minimal, none) and seven colours,
+  picked from live samples.
+- Tamil, Hindi, Telugu, Kannada, Malayalam, Marathi, Gujarati and more are recognised. The captions come out
+  as the English meaning of what you said.
+- Cartoon cut-aways with a cast made for each video (skin and shirt colours taken from you), so no two videos
+  share the same cartoon.
+- Edit the same video again in another style. The earlier finished video is kept.
 - Animated graphics: title cards, step cards, diagrams, counters, checklists, prompt boxes, phone and laptop
   mock-ups, big step numbers, icon stickers (2,437 icons), comment call-to-action, end card.
 - Original music in six moods, made for each video, lowered automatically under your voice.
 - Sound effects on every visual beat (pops, ticks, whooshes), pre-mixed.
 - Green screen swap to a moving background.
-- A live page that shows each step while it happens, and an optional hand-editing step in FilmCraft.
+- A page in your browser where you upload, choose, watch each step and open earlier edits, plus an optional
+  hand-editing step in FilmCraft.
 
 ## How it works
 
@@ -59,7 +68,8 @@ flowchart LR
     I -->|no| K[Done]
 ```
 
-1. **You give Claude the video** (drag it in, or type `@` and the path). Nothing else is needed.
+1. **You give Claude the video** (drag it in, or type `@` and the path), or drop it on the edit page's start
+   screen. Nothing else is needed.
 2. **The edit page opens** in Claude's browser pane, and the analysis starts at the same time, so you never wait
    for the first question.
 3. **You choose** on the page: a style from the pictures (or describe your own), the length, extras, and whether
@@ -69,33 +79,61 @@ flowchart LR
 5. **The page shows the work live**: graphics appear as they are made, the render percentage climbs, then the
    finished video plays there.
 6. **Optional**: FilmCraft opens with everything on a real timeline for hand changes.
+7. **Want another look?** Change the style or captions on the same page and press **Edit again with these
+   choices**. Your speech is not analysed again, so it is quicker (75 s for a 24 s reel), and the earlier video is
+   kept with its style in the file name.
 
 ## The edit page
 
 One page for the whole job. It runs on your own computer only (`127.0.0.1`) and opens on the right side of the
-Claude app.
+Claude app, or in any browser. Faces in these screenshots are blurred and the transcript is hidden.
 
-**1. Choose.** Style pictures, "describe your own", length, extras and how to finish:
+**Start.** Drop a raw video from your phone or camera (MP4 or MOV, up to 8 GB). It stays on your computer. Your
+earlier edits are listed below it; click one to open it again. The **+ New video** button at the top right brings
+you back here from any screen.
 
-![Choosing the style on the edit page](docs/img/page_choose.png)
+![Start screen with the upload area and recent edits](docs/img/page_start.png)
 
-**2. Watch.** Every step with a short note on what it did, then your choice summarised:
+**1. Pick a style.** Each picture shows how the style goes from start to finish. Or describe your own look, or
+paste a link to a reel you like. Your speech is analysed while you choose.
 
-![Progress steps](docs/img/page_steps.png)
+![The six styles and Describe your own](docs/img/page_styles.png)
 
-![Your choice](docs/img/page_choice.png)
+**2. Pick captions.** Every layout is shown as a sample subtitle. Pick a colour and the sample changes with it.
 
-**3. See the plan.** A clickable timeline: the parts of your original that were kept (green) and cut (grey),
-cards, stickers, captions and music. Click anywhere to jump the video there.
+![Caption layouts with samples and colour swatches](docs/img/page_captions.png)
 
-![Timeline](docs/img/page_timeline.png)
+**3, 4 and 5. Length, extras and how to finish.** Lengths that don't fit your video are greyed out. Extras are
+music, zoom-ins, icon stickers, a recap checklist and cartoon cut-aways.
 
-**4. See the graphics.** Each graphic shows up the moment it is rendered:
+![Length, extras and finish options](docs/img/page_options.png)
+
+**Watch it work.** Each step shows what it did: words heard, how many gaps were cut, the render progress.
+
+![Progress steps while the edit runs](docs/img/page_editing.png)
+
+**Finished.** The video plays on the page. FilmCraft is there if you want to change something by hand.
+
+![Finished video and FilmCraft panel](docs/img/page_finished.png)
+
+**Edit again.** All the options stay open after an edit, set to what you used. Change any of them and press
+**Edit again with these choices**.
+
+![Options kept open with the Edit again button](docs/img/page_edit_again.png)
+
+**Timeline.** The parts of your original that were kept (green) and cut (grey), with cards, stickers, captions
+and music. Click anywhere to jump the video there.
+
+![Timeline of kept and cut parts](docs/img/page_timeline.png)
+
+**Graphics.** Each graphic shows up the moment it is rendered:
 
 ![Graphics appearing as they are made](docs/img/page_graphics.png)
 
-The page also shows the cut video, then the finished one, and your transcript with the cut words struck out
-(click a word to jump there).
+**Remove an edit.** The x on a recent edit removes it from the list. Tick the box to also move its working files
+to the Recycle Bin. Your original video and the finished video are never deleted.
+
+![Remove dialog](docs/img/page_remove.png)
 
 ## Editing styles and looks
 
@@ -104,6 +142,9 @@ The page also shows the cut video, then the finished one, and your transcript wi
 | **Bold B-roll** | Hook title band over B-roll, warm cinematic face, a big lime number over a phone or laptop shot for every point, stacked-word captions, glowing "Comment X", end card | Lists and "N steps" videos |
 | **Clean cards** | Cards above your face in a rounded window, full-screen cards, serif key-word captions, step headers | Explainers and how-tos |
 | **Face and captions** | Your face the whole time, zoom-ins, word-highlight captions, a title and a few cards | Opinions and stories; fastest |
+| **Bold + Animated** | Bold B-roll with an animated cartoon scene for every point | Stories and lists that need more movement |
+| **AI News** | You over the headline: screenshots zoom in, key lines highlighted | Reacting to news and launches |
+| **Screen tutorial** | Your screen recording zooms to each click, your face in a bubble | Showing how to use a tool |
 | **Describe your own** | Claude picks the nearest style and applies what you wrote (or studies a reel you link) | Anything else |
 
 The storyboards at the top of this page show each style from start to finish, and the edit page uses the same
@@ -198,13 +239,15 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
 The first install takes 5 to 10 minutes: it creates a Python environment, installs the headless browser and
-downloads the Whisper speech model (about 480 MB) and the person model (224 MB).
+downloads the Whisper speech model (about 480 MB), the person model (224 MB) and the big speech model for Indian
+and other languages (large-v3-turbo, MIT, 1.6 GB).
 
 | Option | What it adds |
 |---|---|
 | `-WithFilmCraft` | FilmCraft for hand touch-ups (free, MIT or Apache-2.0, about 115 MB, checksum verified) |
 | `-WithRNNoise` | Neural voice noise models (no explicit licence, so opt-in) |
 | `-NoModels` | Skips the model downloads |
+| `-NoBigSpeech` | Skips the 1.6 GB speech model (English still works; other languages come out wrong) |
 | `-AllowNonMIT` | Extra libraries that are not MIT or ISC (off by default) |
 
 If Windows Smart App Control briefly blocks a new library, the installer waits and tries again. It never turns
@@ -214,6 +257,7 @@ any protection off.
 
 In Claude Code, from any folder:
 
+- "Open the edit page": the start screen opens and you drop your video there.
 - `@"D:\clips\my-reel.mp4"` and nothing else: the edit page opens and you choose there.
 - "Edit this into a 30 s reel with yellow captions and no music": the description is used as your style.
 - "Swap the green background": works when the background can be keyed.
@@ -224,6 +268,12 @@ because those need judgement):
 
 ```powershell
 .venv\Scripts\python.exe scripts\autoedit.py "my video.mp4"
+```
+
+The edit page on its own, without Claude (choices made on the page run the automatic edit):
+
+```powershell
+.venv\Scripts\python.exe scripts\live.py --home "D:\clips" --open
 ```
 
 ## Optional: touch up in FilmCraft
@@ -251,7 +301,7 @@ install.ps1               installer
 scripts/                  autoedit, transcribe, cut, analyze, compose, captions, render_gfx, live, filmcraft_open,
                           music, sfx_design, make_gallery, learn_style (study a reference reel), and more
 templates/                gfx.html (all graphics), live.html (edit page), motionbg.html, title3d.html
-styles/                   edit_styles.json (the three styles), presets.json, themes.json (colour looks)
+styles/                   edit_styles.json (the six styles), presets.json, themes.json (colour looks)
 assets/                   fonts, icons, sound effects, gallery pictures
 references/               style notes learned from reference videos, engineering notes, recording guide
 skills/                   humanizer and YouTube helpers (chapters, titles, SEO, Shorts)
@@ -267,6 +317,8 @@ docs/img/                 the screenshots in this README
 - **Licences:** everything bundled is MIT, ISC or OFL; anything else is opt-in. See [LICENSES.md](LICENSES.md).
 - **Limits:**
   - Whisper can mishear names, so Claude checks the transcript.
+  - Speech in Tamil and other Indian languages becomes English-meaning captions, not captions in your own
+    script, and the word highlight does not match each spoken word exactly.
   - Background voices talking over you cannot be separated.
   - Background swap needs a green or blue screen or a plain wall far from your skin and clothes colours.
   - WhatsApp lowers video quality, so send the original file by cable or Drive.

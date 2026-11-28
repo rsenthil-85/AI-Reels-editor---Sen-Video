@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.2 - 2026-11-28
+- Edit page keeps every option open (style, captions, colour, length, extras, finish), also after Start editing, and
+  shows the choices the current edit used. After an edit finishes, "Edit again with these choices" re-edits the same
+  video with a different style or captions; the earlier finished video is kept with the old style in its name.
+  Measured: a re-edit to Clean cards took 75 s (analysis reused).
+
 ## 1.12.1 - 2026-11-28
 - The big speech model is bundled with the skill: `assets/models/whisper-large-v3-turbo` (MIT, 1.6 GB). install.ps1
   downloads it once (skip with `-NoBigSpeech`); transcribe.py uses that copy first. It stays out of git (GitHub's

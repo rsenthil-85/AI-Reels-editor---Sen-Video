@@ -85,6 +85,29 @@ def run_auto(ch, src, ed):
                          stdout=open(os.path.join(ed, "auto_edit.log"), "w"), stderr=subprocess.STDOUT)
     threading.Thread(target=go, daemon=True).start()
 
+def keep_previous(ed):
+    """Before editing the same video again: keep the finished video under the old style's name and reset the later steps."""
+    try: old = json.load(open(os.path.join(ed, "choice.json"), encoding="utf-8"))
+    except Exception: old = {}
+    try:
+        st = json.load(open(os.path.join(ed, "live.json"), encoding="utf-8"))
+        out = st.get("out") or ""
+        if out and os.path.exists(out):
+            styles = json.load(open(os.path.join(ROOT, "styles", "edit_styles.json"), encoding="utf-8"))
+            lbl = "own style" if old.get("style") == "describe" else styles.get(old.get("style"), {}).get("label", old.get("style") or "earlier")
+            lbl = re.sub(r"[^A-Za-z0-9 ]+", " ", lbl).strip()
+            base, ext = os.path.splitext(out); n, dst = 1, f"{base} ({lbl}){ext}"
+            while os.path.exists(dst): n += 1; dst = f"{base} ({lbl} {n}){ext}"
+            os.replace(out, dst); LL.note(ed, "previous edit kept as " + os.path.basename(dst))
+        for k in ("style", "graphics", "render", "audio", "done", "filmcraft"):
+            if k in st.get("steps", {}): st["steps"][k] = {"label": st["steps"][k].get("label", k), "state": "todo", "detail": ""}
+        st.pop("out", None); st["start"] = time.time()
+        json.dump(st, open(os.path.join(ed, "live.json"), "w", encoding="utf-8"), ensure_ascii=False)
+    except Exception as e: LL.note(ed, f"could not reset the last edit: {e}")
+    for f in ("choice.taken",):
+        try: os.remove(os.path.join(ed, f))
+        except OSError: pass
+
 def go_home():
     global SRC, ED
     SRC = ED = None
@@ -265,6 +288,9 @@ class H(BaseHTTPRequestHandler):
             return self.send_json({"ok": True, "removed": True, "freed_mb": round(freed / 1e6)})
         if not ED: return self.send_json({"ok": False, "error": "upload your video first"})
         if path == "/api/choose":   # style / length / extras / finish - Claude (watching choice.json) takes it from here
+            if ED and os.path.exists(os.path.join(ED, "choice.json")):   # edit again with other choices
+                if edit_running(ED): return self.send_json({"ok": False, "error": "This edit is still running - wait for it to finish"})
+                keep_previous(ED)
             styles = json.load(open(os.path.join(ROOT, "styles", "edit_styles.json"), encoding="utf-8"))
             ch = {"style": body.get("style") if body.get("style") in styles or body.get("style") == "describe" else "mixed",
                   "describe": str(body.get("describe", ""))[:600],
